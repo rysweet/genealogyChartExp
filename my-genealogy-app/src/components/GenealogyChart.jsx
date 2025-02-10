@@ -53,7 +53,8 @@ export default function GenealogyChart({
   people,
   maxGenerations,
   centerPersonId,
-  onUpdatePeople
+  onUpdatePeople,
+  onSetCenter  // Add this prop
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const svgRef = useRef(null);
@@ -230,17 +231,6 @@ function getInnerRadius(generation) {
     }
   }
 
-  const handleEditSave = (updatedPerson) => {
-    onUpdatePeople((prev) =>
-      prev.map((p) => (p.id === updatedPerson.id ? updatedPerson : p))
-    );
-    setSelectedPersonId(null);
-  };
-
-  const handleEditCancel = () => {
-    setSelectedPersonId(null);
-  };
-
   const selectedPerson = people.find((p) => p.id === selectedPersonId);
 
   return (
@@ -249,8 +239,16 @@ function getInnerRadius(generation) {
       {selectedPerson && (
         <PersonEditForm
           person={selectedPerson}
-          onSave={handleEditSave}
-          onCancel={handleEditCancel}
+          onSave={(updatedPerson) => {
+            onUpdatePeople(prev =>
+              prev.map(p => p.id === updatedPerson.id ? updatedPerson : p)
+            );
+          }}
+          onClose={() => setSelectedPersonId(null)}
+          onSetCenter={(id) => {
+            onSetCenter(id);
+            setSelectedPersonId(null);
+          }}
         />
       )}
     </div>

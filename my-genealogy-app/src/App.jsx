@@ -62,6 +62,7 @@ function App() {
         maxGenerations={maxGenerations}
         centerPersonId={centerId}
         onUpdatePeople={setPeople}
+        onSetCenter={setCenterId}  // Add this prop
       />
       <PeopleTable
         people={people}
