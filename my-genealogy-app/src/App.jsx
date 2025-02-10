@@ -4,6 +4,7 @@ import Controls from "./components/Controls";
 import GenealogyChart from "./components/GenealogyChart";
 import { importGedcomFile } from "./gedcom/importGedcom";
 import { exportGedcom } from "./gedcom/exportGedcom";
+import PeopleTable from "./components/PeopleTable";
 
 function App() {
   const [maxGenerations, setMaxGenerations] = useState(5);
@@ -21,8 +22,10 @@ function App() {
   const handleImportGedcom = async (file) => {
     try {
       const importedPeople = await importGedcomFile(file);
+      console.log("Imported people:", importedPeople);
       if (importedPeople.length > 0) {
-        setCenterId(importedPeople[0].id);
+        const importedCenterId = importedPeople[0].id;
+        setCenterId(importedCenterId);
       }
       setPeople(importedPeople);
     } catch (err) {
@@ -59,6 +62,10 @@ function App() {
         maxGenerations={maxGenerations}
         centerPersonId={centerId}
         onUpdatePeople={setPeople}
+      />
+      <PeopleTable
+        people={people}
+        onSetCenter={(personId) => setCenterId(personId)}
       />
     </div>
   );

@@ -1,23 +1,32 @@
 export async function importGedcomFile(file) {
   const text = await file.text();
+  console.log("Raw file content:", text.substring(0, 200) + "..."); // Show first 200 chars
+  
   const peopleById = {};
   const familiesById = {};
   let currentRecord = null;
   let currentType = null;
-  const lines = text.split(/\\r?\\n/);
+  
+  // Fix the line splitting - remove escaped characters
+  const lines = text.split(/\r?\n/);
+  console.log("Number of lines split:", lines.length);
 
   function finishRecord() {
     if (!currentRecord || !currentType) return;
     if (currentType === "INDI") {
+      console.log("Parsed individual:", currentRecord);
       peopleById[currentRecord.id] = currentRecord;
     } else if (currentType === "FAM") {
+      console.log("Parsed family:", currentRecord);
       familiesById[currentRecord.id] = currentRecord;
     }
     currentRecord = null;
     currentType = null;
   }
 
-  lines.forEach((line) => {
+  // First pass: Create all people
+  lines.forEach((line, index) => {
+    console.log(`Line ${index}:`, line);
     const parts = line.trim().split(" ");
     if (parts.length < 2) return;
     const level = parts[0];
@@ -26,11 +35,25 @@ export async function importGedcomFile(file) {
     if (level === "0" && tagOrId.startsWith("@") && parts.length >= 3) {
       const recordType = parts[2];
       finishRecord();
+      const cleanedId = tagOrId.replace(/^@|@$/g, "");
       if (recordType === "INDI") {
-        currentRecord = { id: tagOrId, firstName: "", lastName: "", birthDate: "", deathDate: "", parents: [] };
+        currentRecord = { 
+          id: cleanedId, 
+          firstName: "", 
+          lastName: "", 
+          birthDate: "", 
+          deathDate: "", 
+          parents: [],
+          families: [] // Track which families this person belongs to
+        };
         currentType = "INDI";
       } else if (recordType === "FAM") {
-        currentRecord = { id: tagOrId, husb: null, wife: null, children: [] };
+        currentRecord = { 
+          id: cleanedId, 
+          husb: null, 
+          wife: null, 
+          children: [] 
+        };
         currentType = "FAM";
       }
     } else if (currentType === "INDI") {
@@ -65,28 +88,31 @@ export async function importGedcomFile(file) {
       }
     } else if (currentType === "FAM") {
       const rest = line.trim().substring(2).trim();
-      if (rest.startsWith("HUSB")) {
+      if (rest.startsWith("HUSB") || rest.startsWith("WIFE") || rest.startsWith("CHIL")) {
         const tokens = rest.split(" ");
-        if (tokens.length >= 2) {
-          currentRecord.husb = tokens[1];
-        }
-      } else if (rest.startsWith("WIFE")) {
-        const tokens = rest.split(" ");
-        if (tokens.length >= 2) {
-          currentRecord.wife = tokens[1];
-        }
-      } else if (rest.startsWith("CHIL")) {
-        const tokens = rest.split(" ");
-        if (tokens.length >= 2) {
-          currentRecord.children.push(tokens[1]);
-        }
+        const refId = tokens[1] ? tokens[1].replace(/^@|@$/g, "") : null;
+        if (rest.startsWith("HUSB")) currentRecord.husb = refId;
+        else if (rest.startsWith("WIFE")) currentRecord.wife = refId;
+        else if (rest.startsWith("CHIL")) currentRecord.children.push(refId);
       }
     }
   });
   finishRecord();
+
+  // Second pass: Establish all relationships
   Object.values(familiesById).forEach((fam) => {
     const father = fam.husb;
     const mother = fam.wife;
+
+    // Add family reference to parents
+    if (father && peopleById[father]) {
+      peopleById[father].families.push(fam.id);
+    }
+    if (mother && peopleById[mother]) {
+      peopleById[mother].families.push(fam.id);
+    }
+
+    // Add parents to children
     fam.children.forEach((childId) => {
       if (peopleById[childId]) {
         peopleById[childId].parents = [];
@@ -95,5 +121,7 @@ export async function importGedcomFile(file) {
       }
     });
   });
+
+  console.log("People with relationships:", peopleById);
   return Object.values(peopleById);
 }

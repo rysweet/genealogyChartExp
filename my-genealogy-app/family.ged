@@ -1,0 +1,243 @@
+0 HEAD
+1 CHAR UTF-8
+0 @g0_1@ INDI
+1 NAME Bob /Center/
+1 BIRT
+2 DATE 1990
+0 @g1_1@ INDI
+1 NAME Dad /Center/
+1 BIRT
+2 DATE 1960
+0 @g1_2@ INDI
+1 NAME Mom /Center/
+1 BIRT
+2 DATE 1962
+0 @g2_1@ INDI
+1 NAME Grandpa1 /Center/
+1 BIRT
+2 DATE 1930
+1 DEAT
+2 DATE 1990
+0 @g2_2@ INDI
+1 NAME Grandma1 /Center/
+1 BIRT
+2 DATE 1932
+1 DEAT
+2 DATE 2000
+0 @g2_3@ INDI
+1 NAME Grandpa2 /Center/
+1 BIRT
+2 DATE 1931
+1 DEAT
+2 DATE 1985
+0 @g2_4@ INDI
+1 NAME Grandma2 /Center/
+1 BIRT
+2 DATE 1934
+1 DEAT
+2 DATE 1995
+0 @g3_1@ INDI
+1 NAME GreatGrandpa1 /Center/
+1 BIRT
+2 DATE 1905
+1 DEAT
+2 DATE 1970
+0 @g3_2@ INDI
+1 NAME GreatGrandma1 /Center/
+1 BIRT
+2 DATE 1907
+1 DEAT
+2 DATE 1972
+0 @g3_3@ INDI
+1 NAME GreatGrandpa2 /Center/
+1 BIRT
+2 DATE 1906
+1 DEAT
+2 DATE 1971
+0 @g3_4@ INDI
+1 NAME GreatGrandma2 /Center/
+1 BIRT
+2 DATE 1908
+1 DEAT
+2 DATE 1973
+0 @g3_5@ INDI
+1 NAME GreatGrandpa3 /Center/
+1 BIRT
+2 DATE 1903
+1 DEAT
+2 DATE 1969
+0 @g3_6@ INDI
+1 NAME GreatGrandma3 /Center/
+1 BIRT
+2 DATE 1904
+1 DEAT
+2 DATE 1970
+0 @g3_7@ INDI
+1 NAME GreatGrandpa4 /Center/
+1 BIRT
+2 DATE 1902
+1 DEAT
+2 DATE 1968
+0 @g3_8@ INDI
+1 NAME GreatGrandma4 /Center/
+1 BIRT
+2 DATE 1909
+1 DEAT
+2 DATE 1974
+0 @g4_1@ INDI
+1 NAME Ancestor 1 /Center/
+1 BIRT
+2 DATE 1880
+1 DEAT
+2 DATE 1940
+0 @g4_2@ INDI
+1 NAME Ancestor 2 /Center/
+1 BIRT
+2 DATE 1881
+1 DEAT
+2 DATE 1941
+0 @g4_3@ INDI
+1 NAME Ancestor 3 /Center/
+1 BIRT
+2 DATE 1882
+1 DEAT
+2 DATE 1942
+0 @g4_4@ INDI
+1 NAME Ancestor 4 /Center/
+1 BIRT
+2 DATE 1883
+1 DEAT
+2 DATE 1943
+0 @g4_5@ INDI
+1 NAME Ancestor 5 /Center/
+1 BIRT
+2 DATE 1884
+1 DEAT
+2 DATE 1944
+0 @g4_6@ INDI
+1 NAME Ancestor 6 /Center/
+1 BIRT
+2 DATE 1885
+1 DEAT
+2 DATE 1945
+0 @g4_7@ INDI
+1 NAME Ancestor 7 /Center/
+1 BIRT
+2 DATE 1886
+1 DEAT
+2 DATE 1946
+0 @g4_8@ INDI
+1 NAME Ancestor 8 /Center/
+1 BIRT
+2 DATE 1887
+1 DEAT
+2 DATE 1947
+0 @g4_9@ INDI
+1 NAME Ancestor 9 /Center/
+1 BIRT
+2 DATE 1888
+1 DEAT
+2 DATE 1948
+0 @g4_10@ INDI
+1 NAME Ancestor 10 /Center/
+1 BIRT
+2 DATE 1889
+1 DEAT
+2 DATE 1949
+0 @g4_11@ INDI
+1 NAME Ancestor 11 /Center/
+1 BIRT
+2 DATE 1890
+1 DEAT
+2 DATE 1950
+0 @g4_12@ INDI
+1 NAME Ancestor 12 /Center/
+1 BIRT
+2 DATE 1891
+1 DEAT
+2 DATE 1951
+0 @g4_13@ INDI
+1 NAME Ancestor 13 /Center/
+1 BIRT
+2 DATE 1892
+1 DEAT
+2 DATE 1952
+0 @g4_14@ INDI
+1 NAME Ancestor 14 /Center/
+1 BIRT
+2 DATE 1893
+1 DEAT
+2 DATE 1953
+0 @g4_15@ INDI
+1 NAME Ancestor 15 /Center/
+1 BIRT
+2 DATE 1894
+1 DEAT
+2 DATE 1954
+0 @g4_16@ INDI
+1 NAME Ancestor 16 /Center/
+1 BIRT
+2 DATE 1895
+1 DEAT
+2 DATE 1955
+0 @Fg1_1_g1_2@ FAM
+1 HUSB @g1_1@
+1 WIFE @g1_2@
+1 CHIL @g0_1@
+0 @Fg2_1_g2_2@ FAM
+1 HUSB @g2_1@
+1 WIFE @g2_2@
+1 CHIL @g1_1@
+0 @Fg2_3_g2_4@ FAM
+1 HUSB @g2_3@
+1 WIFE @g2_4@
+1 CHIL @g1_2@
+0 @Fg3_1_g3_2@ FAM
+1 HUSB @g3_1@
+1 WIFE @g3_2@
+1 CHIL @g2_1@
+0 @Fg3_3_g3_4@ FAM
+1 HUSB @g3_3@
+1 WIFE @g3_4@
+1 CHIL @g2_2@
+0 @Fg3_5_g3_6@ FAM
+1 HUSB @g3_5@
+1 WIFE @g3_6@
+1 CHIL @g2_3@
+0 @Fg3_7_g3_8@ FAM
+1 HUSB @g3_7@
+1 WIFE @g3_8@
+1 CHIL @g2_4@
+0 @Fg4_1_g4_2@ FAM
+1 HUSB @g4_1@
+1 WIFE @g4_2@
+1 CHIL @g3_1@
+0 @Fg4_3_g4_4@ FAM
+1 HUSB @g4_3@
+1 WIFE @g4_4@
+1 CHIL @g3_2@
+0 @Fg4_5_g4_6@ FAM
+1 HUSB @g4_5@
+1 WIFE @g4_6@
+1 CHIL @g3_3@
+0 @Fg4_7_g4_8@ FAM
+1 HUSB @g4_7@
+1 WIFE @g4_8@
+1 CHIL @g3_4@
+0 @Fg4_10_g4_9@ FAM
+1 HUSB @g4_10@
+1 WIFE @g4_9@
+1 CHIL @g3_5@
+0 @Fg4_11_g4_12@ FAM
+1 HUSB @g4_11@
+1 WIFE @g4_12@
+1 CHIL @g3_6@
+0 @Fg4_13_g4_14@ FAM
+1 HUSB @g4_13@
+1 WIFE @g4_14@
+1 CHIL @g3_7@
+0 @Fg4_15_g4_16@ FAM
+1 HUSB @g4_15@
+1 WIFE @g4_16@
+1 CHIL @g3_8@
+0 TRLR

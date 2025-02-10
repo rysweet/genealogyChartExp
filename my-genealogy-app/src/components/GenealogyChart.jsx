@@ -20,6 +20,35 @@ function createColorScale(maxGenerations) {
     .range(["#002200", "#99ff99"]);
 }
 
+function getTextColorForBackground(backgroundColor) {
+  let r, g, b;
+  
+  if (backgroundColor.startsWith('#')) {
+    // Handle hex format
+    r = parseInt(backgroundColor.slice(1, 3), 16);
+    g = parseInt(backgroundColor.slice(3, 5), 16);
+    b = parseInt(backgroundColor.slice(5, 7), 16);
+  } else if (backgroundColor.startsWith('rgb')) {
+    // Handle rgb format
+    const matches = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (matches) {
+      [, r, g, b] = matches.map(Number);
+    } else {
+      console.error('Invalid RGB format:', backgroundColor);
+      return '#ffffff';
+    }
+  } else {
+    console.error('Unsupported color format:', backgroundColor);
+    return '#ffffff';
+  }
+  
+  // Calculate brightness using W3C formula
+  const brightness = Math.round(((r * 299) + (g * 587) + (b * 114)) / 1000);
+  console.log(`RGB: ${r},${g},${b}, Brightness: ${brightness}`);
+  
+  return brightness > 125 ? "#003300" : "#ffffff";
+}
+
 export default function GenealogyChart({
   people,
   maxGenerations,
@@ -30,9 +59,8 @@ export default function GenealogyChart({
   const svgRef = useRef(null);
 
   useEffect(() => {
-    if (!people || people.length === 0) return;
     drawChart();
-  }, [people, maxGenerations]);
+  }, [people, maxGenerations, centerPersonId]);
 
   function approximateTextWidth(str, fontSize = DEFAULT_FONT_SIZE) {
     const avgCharWidth = fontSize * 0.6;
@@ -91,19 +119,23 @@ export default function GenealogyChart({
       }
     }
     const centerPerson = peopleMap.get(centerPersonId);
+    const centerBgColor = colorScale(0);
     svg.append("circle")
       .attr("cx", centerX)
       .attr("cy", centerY)
       .attr("r", CENTER_RADIUS)
-      .attr("fill", colorScale(0))
+      .attr("fill", centerBgColor)
       .attr("stroke", "#333")
       .on("click", () => { setSelectedPersonId(centerPersonId); });
+    
+    console.log('Center color:', centerBgColor, 'Text color:', getTextColorForBackground(centerBgColor));
+    
     svg.append("text")
       .attr("x", centerX)
       .attr("y", centerY + 4)
       .attr("text-anchor", "middle")
       .style("font-size", DEFAULT_FONT_SIZE + "px")
-      .style("fill", "#fff")
+      .style("fill", getTextColorForBackground(centerBgColor))
       .text(centerPerson ? centerPerson.firstName + " " + centerPerson.lastName : "Unknown");
     for (let i = 1; i < maxGenerations; i++) {
       const genArray = ancestors[i];
@@ -123,14 +155,14 @@ export default function GenealogyChart({
           .endAngle(endAngle);
         if (!personId) {
           svg.append("path")
-            .attr("transform", \`translate(\${centerX},\${centerY})\`)
+            .attr("transform", `translate(${centerX},${centerY})`)
             .attr("d", arcGenerator)
             .attr("fill", "#eee")
             .attr("stroke", "#ccc");
           continue;
         }
         svg.append("path")
-          .attr("transform", \`translate(\${centerX},\${centerY})\`)
+          .attr("transform", `translate(${centerX},${centerY})`)
           .attr("d", arcGenerator)
           .attr("fill", arcFillColor)
           .attr("stroke", "#333")
@@ -155,16 +187,16 @@ export default function GenealogyChart({
             .outerRadius(lineRadius)
             .startAngle(startAngle)
             .endAngle(endAngle);
-          const textPathId = \`textPath-\${i}-\${k}-line\${idx}\`;
+          const textPathId = `textPath-${i}-${k}-line${idx}`;
           svg.append("defs")
             .append("path")
             .attr("id", textPathId)
-            .attr("transform", \`translate(\${centerX},\${centerY})\`)
+            .attr("transform", `translate(${centerX},${centerY})`)
             .attr("d", lineArcGen());
           const lineArcLength = angleDiff * lineRadius;
           svg.append("text")
             .style("font-size", DEFAULT_FONT_SIZE + "px")
-            .style("fill", "#fff")
+            .style("fill", getTextColorForBackground(arcFillColor))
             .append("textPath")
             .attr("xlink:href", "#" + textPathId)
             .attr("startOffset", (lineArcLength / 2) + "px")

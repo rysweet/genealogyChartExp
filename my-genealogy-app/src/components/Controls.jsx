@@ -5,6 +5,7 @@ export default function Controls({ onImportGedcom, onExportGedcom, onAddGenerati
     const file = e.target.files[0];
     if (file) {
       onImportGedcom(file);
+      e.target.value = null; // reset
     }
   };
 
