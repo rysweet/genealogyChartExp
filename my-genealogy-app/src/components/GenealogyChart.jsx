@@ -149,7 +149,10 @@ function getInnerRadius(generation) {
       .attr("r", CENTER_RADIUS)
       .attr("fill", centerBgColor)
       .attr("stroke", "#333")
-      .on("click", () => { setSelectedPersonId(centerPersonId); });
+      .on("click", (event) => { 
+        event.stopPropagation();  // Add this
+        setSelectedPersonId(centerPersonId);
+      });
     
     console.log('Center color:', centerBgColor, 'Text color:', getTextColorForBackground(centerBgColor));
     
@@ -190,7 +193,10 @@ function getInnerRadius(generation) {
           .attr("d", arcGenerator)
           .attr("fill", arcFillColor)
           .attr("stroke", "#333")
-          .on("click", () => { setSelectedPersonId(personId); });
+          .on("click", (event) => {
+            event.stopPropagation();  // Add this
+            setSelectedPersonId(personId);
+          });
         let label = "Unknown";
         const person = peopleMap.get(personId);
         if (person) {
@@ -231,10 +237,27 @@ function getInnerRadius(generation) {
     }
   }
 
+  // Remove the SVG background click handler
+  useEffect(() => {
+    const handleBackgroundClick = (e) => {
+      // Only close if clicking directly on the container div
+      if (e.target === e.currentTarget) {
+        setSelectedPersonId(null);
+      }
+    };
+
+    // Add click handler to the container div instead of SVG
+    const container = document.querySelector('.genealogy-container');
+    if (container) {
+      container.addEventListener('click', handleBackgroundClick);
+      return () => container.removeEventListener('click', handleBackgroundClick);
+    }
+  }, []);
+
   const selectedPerson = people.find((p) => p.id === selectedPersonId);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="genealogy-container" style={{ position: "relative" }}>
       <svg ref={svgRef}></svg>
       {selectedPerson && (
         <PersonEditForm

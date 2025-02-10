@@ -16,6 +16,16 @@ export default function PersonEditForm({
     p.parents && p.parents.includes(person.id)
   );
 
+  // Prevent events from bubbling up to parent forms and background
+  const handleFormClick = (e) => {
+    e.stopPropagation();
+  };
+
+  const handleChildrenToggle = (e) => {
+    e.stopPropagation();  // Stop event from bubbling
+    setShowChildren(prev => !prev);  // Use functional update
+  };
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') {
@@ -23,19 +33,8 @@ export default function PersonEditForm({
       }
     };
 
-    const handleClickOutside = (e) => {
-      if (formRef.current && !formRef.current.contains(e.target)) {
-        onClose();
-      }
-    };
-
     document.addEventListener('keydown', handleEsc);
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
   const handleChange = (field, value) => {
@@ -62,10 +61,16 @@ export default function PersonEditForm({
     setShowChildren(true);
   };
 
+  const handleSetCenter = () => {
+    onSetCenter(person.id);
+    onClose(); // Add this to close all forms when setting center
+  };
+
   return (
     <div 
+      onClick={handleFormClick}
       style={{
-        position: depth === 0 ? 'absolute' : 'relative',
+        position: depth === 0 ? 'fixed' : 'relative', // Changed from absolute to fixed for root
         top: depth === 0 ? '50%' : 'auto',
         left: depth === 0 ? '50%' : 'auto',
         transform: depth === 0 ? 'translate(-50%, -50%)' : 'none',
@@ -73,10 +78,13 @@ export default function PersonEditForm({
         padding: '20px',
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        zIndex: 1000 - depth,
+        zIndex: 2000, // Use a high base z-index
         marginLeft: depth > 0 ? '20px' : '0',
         marginTop: depth > 0 ? '10px' : '0',
-        border: depth > 0 ? '1px solid #ccc' : 'none'
+        border: depth > 0 ? '1px solid #ccc' : 'none',
+        maxHeight: depth === 0 ? '80vh' : 'none',
+        overflowY: 'auto',
+        maxWidth: '90vw'
       }} 
       ref={formRef}
     >
@@ -122,7 +130,7 @@ export default function PersonEditForm({
         </div>
         <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
           <button 
-            onClick={() => onSetCenter(person.id)}
+            onClick={handleSetCenter}  // Changed from onSetCenter to handleSetCenter
             style={{ 
               backgroundColor: '#4CAF50',
               color: 'white',
@@ -137,7 +145,7 @@ export default function PersonEditForm({
 
           {children.length > 0 && (
             <button
-              onClick={() => setShowChildren(!showChildren)}
+              onClick={handleChildrenToggle}  // Use new handler
               style={{
                 backgroundColor: '#2196F3',
                 color: 'white',
@@ -167,7 +175,14 @@ export default function PersonEditForm({
         </div>
 
         {showChildren && children.length > 0 && (
-          <div style={{ marginTop: '20px' }}>
+          <div 
+            onClick={(e) => e.stopPropagation()}  // Stop clicks in children area
+            style={{ 
+              marginTop: '20px',
+              paddingLeft: '10px',
+              borderLeft: '2px solid #eee'
+            }}
+          >
             <h4>Children:</h4>
             {children.map(child => (
               <PersonEditForm
