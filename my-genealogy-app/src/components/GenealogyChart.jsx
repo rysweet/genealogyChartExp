@@ -57,40 +57,55 @@ export default function GenealogyChart({
   onSetCenter  // Add this prop
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
-  const [transform, setTransform] = useState(d3.zoomIdentity);
   const svgRef = useRef(null);
   const gRef = useRef(null);
+  const width = 800;  // Move width/height to component level
+  const height = 800;
 
   useEffect(() => {
     if (!svgRef.current) return;
 
+    // Create base SVG with proper selection
+    const svg = d3.select(svgRef.current)
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", [-width/2, -height/2, width, height]);
+
+    // Create a group for zoom transforms
+    const zoomGroup = svg.append("g")
+      .attr("class", "zoom-group");
+
+    // Store the zoomGroup reference for later use
+    gRef.current = zoomGroup.node();
+
     // Setup zoom behavior
     const zoom = d3.zoom()
-      .scaleExtent([0.5, 5])  // Min/max zoom level
+      .scaleExtent([0.5, 5])
       .on("zoom", (event) => {
-        const { transform } = event;
-        setTransform(transform);
-        d3.select(gRef.current).attr("transform", transform);
+        d3.select(gRef.current)
+          .attr("transform", event.transform);
       });
 
-    // Apply zoom to svg
-    d3.select(svgRef.current)
-      .call(zoom)
-      .call(zoom.transform, transform);
+    // Apply zoom to svg element
+    svg.call(zoom)
+      .call(zoom.transform, d3.zoomIdentity);
 
     // Prevent default wheel behavior
-    svgRef.current.addEventListener('wheel', (e) => {
+    const svgElement = svgRef.current;
+    const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
       }
-    }, { passive: false });
+    };
+
+    svgElement.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      if (svgRef.current) {
-        svgRef.current.removeEventListener('wheel', () => {});
+      if (svgElement) {
+        svgElement.removeEventListener('wheel', handleWheel);
       }
     };
-  }, []);
+  }, [width, height]);
 
   useEffect(() => {
     drawChart();
@@ -144,22 +159,14 @@ function getInnerRadius(generation) {
 }
 
   function drawChart() {
-    const width = 800;
-    const height = 800;
-    const centerX = width / 2;
-    const centerY = height / 2;
+    if (!gRef.current) return;
 
-    // Clear previous content
-    d3.select(svgRef.current).selectAll("*").remove();
+    // Use d3.select on the DOM node reference
+    const zoomGroup = d3.select(gRef.current);
+    zoomGroup.selectAll("*").remove();
 
-    // Create main group for zooming
-    const svg = d3.select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height)
-      .attr("viewBox", [-width / 2, -height / 2, width, height]);
-
-    const g = svg.append("g")
-      .attr("ref", gRef);
+    // Create chart group inside zoom group
+    const chartGroup = zoomGroup.append("g");
 
     const colorScale = createColorScale(maxGenerations);
     const peopleMap = new Map(people.map((p) => [p.id, p]));
@@ -186,12 +193,10 @@ function getInnerRadius(generation) {
     const centerPerson = peopleMap.get(centerPersonId);
     const centerBgColor = colorScale(0);
 
-    // Create a group for all segments
-    const chartGroup = g.append("g")
-      .attr("transform", `translate(${centerX},${centerY})`);
-
-    // Center circle with improved click handling
+    // Use existing chartGroup instead of creating a new one
     chartGroup.append("circle")
+      .attr("cx", 0)
+      .attr("cy", 0)
       .attr("r", CENTER_RADIUS)
       .attr("fill", centerBgColor)
       .attr("stroke", "#333")
@@ -204,7 +209,7 @@ function getInnerRadius(generation) {
     
     console.log('Center color:', centerBgColor, 'Text color:', getTextColorForBackground(centerBgColor));
     
-    g.append("text")
+    chartGroup.append("text")
       .attr("x", 0)
       .attr("y", 4)
       .attr("text-anchor", "middle")
@@ -312,13 +317,12 @@ function getInnerRadius(generation) {
   const selectedPerson = people.find((p) => p.id === selectedPersonId);
 
   const handleResetZoom = () => {
-    d3.select(svgRef.current)
-      .transition()
+    const svg = d3.select(svgRef.current);
+    svg.transition()
       .duration(750)
       .call(
         d3.zoom().transform,
-        d3.zoomIdentity,
-        d3.zoomTransform(svgRef.current).invert([width / 2, height / 2])
+        d3.zoomIdentity
       );
   };
 
