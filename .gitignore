@@ -54,3 +54,7 @@ yarn-error.log*
 # Pack files
 *.pack
 *.pack.old
+
+# .eslintcache
+.eslintcache
+.eslintcache.*
