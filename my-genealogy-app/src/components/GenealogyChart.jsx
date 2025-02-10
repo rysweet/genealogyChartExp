@@ -87,6 +87,28 @@ export default function GenealogyChart({
     return lines;
   }
 
+// Update geometry constants
+const CENTER_RADIUS = 30;
+const BASE_RING_WIDTH = 30;  // Width for second generation
+const RING_WIDTH_INCREMENT = 15;  // Amount to add for each generation
+const ARC_PADDING = 0;
+
+// Calculate ring width for a given generation
+function getRingWidth(generation) {
+  if (generation === 0) return CENTER_RADIUS;
+  return BASE_RING_WIDTH + (generation - 1) * RING_WIDTH_INCREMENT;
+}
+
+// Calculate inner radius for a given generation
+function getInnerRadius(generation) {
+  if (generation === 0) return 0;
+  if (generation === 1) return CENTER_RADIUS;
+  
+  // For generation > 1, sum up all previous ring widths
+  return [...Array(generation - 1)]
+    .reduce((sum, _, idx) => sum + getRingWidth(idx + 1), CENTER_RADIUS);
+}
+
   function drawChart() {
     const width = 800;
     const height = 800;
@@ -141,8 +163,9 @@ export default function GenealogyChart({
       const genArray = ancestors[i];
       const segmentCount = 2 ** i;
       const arcAngle = (2 * Math.PI) / segmentCount - (ARC_PADDING * Math.PI) / 180;
-      const innerRadius = (i - 1) * RING_WIDTH + CENTER_RADIUS;
-      const outerRadius = i * RING_WIDTH + CENTER_RADIUS;
+      const ringWidth = getRingWidth(i);
+      const innerRadius = getInnerRadius(i);
+      const outerRadius = innerRadius + ringWidth;
       const arcFillColor = colorScale(i);
       for (let k = 0; k < segmentCount; k++) {
         const personId = genArray[k];
