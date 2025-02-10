@@ -239,16 +239,20 @@ function getInnerRadius(generation) {
       {selectedPerson && (
         <PersonEditForm
           person={selectedPerson}
-          onSave={(updatedPerson) => {
-            onUpdatePeople(prev =>
-              prev.map(p => p.id === updatedPerson.id ? updatedPerson : p)
-            );
+          onSave={(updatedPerson, isNew) => {
+            onUpdatePeople(prev => {
+              if (isNew) {
+                return [...prev, updatedPerson];
+              }
+              return prev.map(p => p.id === updatedPerson.id ? updatedPerson : p);
+            });
           }}
           onClose={() => setSelectedPersonId(null)}
           onSetCenter={(id) => {
             onSetCenter(id);
             setSelectedPersonId(null);
           }}
+          allPeople={people}
         />
       )}
     </div>
