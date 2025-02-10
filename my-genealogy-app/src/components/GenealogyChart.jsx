@@ -143,14 +143,20 @@ function getInnerRadius(generation) {
     }
     const centerPerson = peopleMap.get(centerPersonId);
     const centerBgColor = colorScale(0);
-    svg.append("circle")
-      .attr("cx", centerX)
-      .attr("cy", centerY)
+
+    // Create a group for all segments
+    const chartGroup = svg.append("g")
+      .attr("transform", `translate(${centerX},${centerY})`);
+
+    // Center circle with improved click handling
+    chartGroup.append("circle")
       .attr("r", CENTER_RADIUS)
       .attr("fill", centerBgColor)
       .attr("stroke", "#333")
+      .attr("cursor", "pointer")
+      .style("pointer-events", "all")
       .on("click", (event) => { 
-        event.stopPropagation();  // Add this
+        event.stopPropagation();
         setSelectedPersonId(centerPersonId);
       });
     
@@ -180,23 +186,30 @@ function getInnerRadius(generation) {
           .outerRadius(outerRadius)
           .startAngle(startAngle)
           .endAngle(endAngle);
+
+        // Create segment group for better event handling
+        const segmentGroup = chartGroup.append("g");
+
         if (!personId) {
-          svg.append("path")
-            .attr("transform", `translate(${centerX},${centerY})`)
+          segmentGroup.append("path")
             .attr("d", arcGenerator)
             .attr("fill", "#eee")
             .attr("stroke", "#ccc");
           continue;
         }
-        svg.append("path")
-          .attr("transform", `translate(${centerX},${centerY})`)
+
+        // Add clickable arc with improved handling
+        segmentGroup.append("path")
           .attr("d", arcGenerator)
           .attr("fill", arcFillColor)
           .attr("stroke", "#333")
+          .attr("cursor", "pointer")
+          .style("pointer-events", "all")
           .on("click", (event) => {
-            event.stopPropagation();  // Add this
+            event.stopPropagation();
             setSelectedPersonId(personId);
           });
+
         let label = "Unknown";
         const person = peopleMap.get(personId);
         if (person) {
@@ -218,15 +231,15 @@ function getInnerRadius(generation) {
             .startAngle(startAngle)
             .endAngle(endAngle);
           const textPathId = `textPath-${i}-${k}-line${idx}`;
-          svg.append("defs")
+          segmentGroup.append("defs")
             .append("path")
             .attr("id", textPathId)
-            .attr("transform", `translate(${centerX},${centerY})`)
             .attr("d", lineArcGen());
           const lineArcLength = angleDiff * lineRadius;
-          svg.append("text")
+          segmentGroup.append("text")
             .style("font-size", DEFAULT_FONT_SIZE + "px")
             .style("fill", getTextColorForBackground(arcFillColor))
+            .style("pointer-events", "none") // Make text non-blocking
             .append("textPath")
             .attr("xlink:href", "#" + textPathId)
             .attr("startOffset", (lineArcLength / 2) + "px")
