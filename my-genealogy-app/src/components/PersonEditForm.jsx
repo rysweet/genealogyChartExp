@@ -80,7 +80,10 @@ export default function PersonEditForm({
       }} 
       ref={formRef}
     >
-      <h3>Edit Person {depth > 0 ? `(${person.firstName})` : ''}</h3>
+      <h3>
+        {person.firstName} {person.lastName}
+        {depth > 0 ? ` (Child)` : ''}
+      </h3>
       <div className="edit-form">
         <div>
           <label>First Name: </label>
