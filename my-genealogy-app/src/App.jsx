@@ -5,11 +5,14 @@ import GenealogyChart from "./components/GenealogyChart";
 import { importGedcomFile } from "./gedcom/importGedcom";
 import { exportGedcom } from "./gedcom/exportGedcom";
 import PeopleTable from "./components/PeopleTable";
+import { JsonFilePersistence } from "./persistence/JsonFilePersistence";
+import { LocalStoragePersistence } from "./persistence/LocalStoragePersistence";
 
 function App() {
   const [maxGenerations, setMaxGenerations] = useState(5);
   const [people, setPeople] = useState([]);
   const [centerId, setCenterId] = useState("g0_1");
+  const [persistence] = useState(() => new JsonFilePersistence());
 
   // Load sample data by default
   useEffect(() => {
@@ -45,6 +48,25 @@ function App() {
     document.body.removeChild(link);
   };
 
+  const handleSaveData = async () => {
+    const success = await persistence.save(people);
+    if (success) {
+      alert('Data saved successfully!');
+    } else {
+      alert('Error saving data');
+    }
+  };
+
+  const handleLoadData = async () => {
+    const loadedData = await persistence.load();
+    if (loadedData) {
+      setPeople(loadedData);
+      if (loadedData.length > 0) {
+        setCenterId(loadedData[0].id);
+      }
+    }
+  };
+
   const addGeneration = () => {
     setMaxGenerations((prev) => prev + 1);
   };
@@ -56,6 +78,8 @@ function App() {
         onImportGedcom={handleImportGedcom}
         onExportGedcom={handleExportGedcom}
         onAddGeneration={addGeneration}
+        onSaveData={handleSaveData}
+        onLoadData={handleLoadData}
       />
       <GenealogyChart
         people={people}

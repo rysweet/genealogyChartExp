@@ -1,6 +1,12 @@
 import React from "react";
 
-export default function Controls({ onImportGedcom, onExportGedcom, onAddGeneration }) {
+export default function Controls({ 
+  onImportGedcom, 
+  onExportGedcom, 
+  onAddGeneration,
+  onSaveData,
+  onLoadData 
+}) {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -23,6 +29,12 @@ export default function Controls({ onImportGedcom, onExportGedcom, onAddGenerati
       </button>
       <button onClick={onAddGeneration} style={{ marginLeft: "10px" }}>
         + Generation
+      </button>
+      <button onClick={onSaveData} style={{ marginLeft: "10px" }}>
+        Save Data
+      </button>
+      <button onClick={onLoadData} style={{ marginLeft: "10px" }}>
+        Load Data
       </button>
     </div>
   );
