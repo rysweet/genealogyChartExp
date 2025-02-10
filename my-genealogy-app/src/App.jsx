@@ -66,6 +66,7 @@ function App() {
       <PeopleTable
         people={people}
         onSetCenter={(personId) => setCenterId(personId)}
+        onUpdatePeople={setPeople}
       />
     </div>
   );
