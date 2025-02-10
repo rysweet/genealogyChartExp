@@ -57,7 +57,40 @@ export default function GenealogyChart({
   onSetCenter  // Add this prop
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const [transform, setTransform] = useState(d3.zoomIdentity);
   const svgRef = useRef(null);
+  const gRef = useRef(null);
+
+  useEffect(() => {
+    if (!svgRef.current) return;
+
+    // Setup zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.5, 5])  // Min/max zoom level
+      .on("zoom", (event) => {
+        const { transform } = event;
+        setTransform(transform);
+        d3.select(gRef.current).attr("transform", transform);
+      });
+
+    // Apply zoom to svg
+    d3.select(svgRef.current)
+      .call(zoom)
+      .call(zoom.transform, transform);
+
+    // Prevent default wheel behavior
+    svgRef.current.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    return () => {
+      if (svgRef.current) {
+        svgRef.current.removeEventListener('wheel', () => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     drawChart();
@@ -115,10 +148,19 @@ function getInnerRadius(generation) {
     const height = 800;
     const centerX = width / 2;
     const centerY = height / 2;
+
+    // Clear previous content
     d3.select(svgRef.current).selectAll("*").remove();
+
+    // Create main group for zooming
     const svg = d3.select(svgRef.current)
       .attr("width", width)
-      .attr("height", height);
+      .attr("height", height)
+      .attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+    const g = svg.append("g")
+      .attr("ref", gRef);
+
     const colorScale = createColorScale(maxGenerations);
     const peopleMap = new Map(people.map((p) => [p.id, p]));
     const ancestors = [];
@@ -145,7 +187,7 @@ function getInnerRadius(generation) {
     const centerBgColor = colorScale(0);
 
     // Create a group for all segments
-    const chartGroup = svg.append("g")
+    const chartGroup = g.append("g")
       .attr("transform", `translate(${centerX},${centerY})`);
 
     // Center circle with improved click handling
@@ -162,9 +204,9 @@ function getInnerRadius(generation) {
     
     console.log('Center color:', centerBgColor, 'Text color:', getTextColorForBackground(centerBgColor));
     
-    svg.append("text")
-      .attr("x", centerX)
-      .attr("y", centerY + 4)
+    g.append("text")
+      .attr("x", 0)
+      .attr("y", 4)
       .attr("text-anchor", "middle")
       .style("font-size", DEFAULT_FONT_SIZE + "px")
       .style("fill", getTextColorForBackground(centerBgColor))
@@ -269,8 +311,22 @@ function getInnerRadius(generation) {
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId);
 
+  const handleResetZoom = () => {
+    d3.select(svgRef.current)
+      .transition()
+      .duration(750)
+      .call(
+        d3.zoom().transform,
+        d3.zoomIdentity,
+        d3.zoomTransform(svgRef.current).invert([width / 2, height / 2])
+      );
+  };
+
   return (
     <div className="genealogy-container" style={{ position: "relative" }}>
+      <div style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}>
+        <button onClick={handleResetZoom}>Reset Zoom</button>
+      </div>
       <svg ref={svgRef}></svg>
       {selectedPerson && (
         <PersonEditForm
