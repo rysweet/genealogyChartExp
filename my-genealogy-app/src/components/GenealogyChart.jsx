@@ -296,8 +296,36 @@ function getInnerRadius(generation) {
     setTooltip({ person: null, position: { x: 0, y: 0 } });
   };
 
+  // Move ancestors calculation outside of drawChart
+  const buildAncestorArray = () => {
+    const ancestors = [];
+    for (let i = 0; i < maxGenerations; i++) {
+      ancestors[i] = new Array(2 ** i).fill(null);
+    }
+    ancestors[0][0] = centerPersonId;
+    
+    const peopleMap = new Map(people.map((p) => [p.id, p]));
+    for (let i = 0; i < maxGenerations - 1; i++) {
+      const size = 2 ** i;
+      for (let j = 0; j < size; j++) {
+        const pid = ancestors[i][j];
+        if (!pid) continue;
+        const person = peopleMap.get(pid);
+        if (!person) continue;
+        if (person.parents && person.parents.length > 0) {
+          ancestors[i + 1][2 * j] = person.parents[0] || null;
+        }
+        if (person.parents && person.parents.length > 1) {
+          ancestors[i + 1][2 * j + 1] = person.parents[1] || null;
+        }
+      }
+    }
+    return ancestors;
+  };
+
   function drawChart() {
     if (!gRef.current) return;
+    const ancestors = buildAncestorArray();
 
     // Use d3.select on the DOM node reference
     const zoomGroup = d3.select(gRef.current);
@@ -362,26 +390,7 @@ function getInnerRadius(generation) {
       .text("−");
 
     const peopleMap = new Map(people.map((p) => [p.id, p]));
-    const ancestors = [];
-    for (let i = 0; i < maxGenerations; i++) {
-      ancestors[i] = new Array(2 ** i).fill(null);
-    }
-    ancestors[0][0] = centerPersonId;
-    for (let i = 0; i < maxGenerations - 1; i++) {
-      const size = 2 ** i;
-      for (let j = 0; j < size; j++) {
-        const pid = ancestors[i][j];
-        if (!pid) continue;
-        const person = peopleMap.get(pid);
-        if (!person) continue;
-        if (person.parents && person.parents.length > 0) {
-          ancestors[i + 1][2 * j] = person.parents[0] || null;
-        }
-        if (person.parents && person.parents.length > 1) {
-          ancestors[i + 1][2 * j + 1] = person.parents[1] || null;
-        }
-      }
-    }
+    // Remove duplicate ancestors creation since we already have it from buildAncestorArray()
 
     // Get effective number of generations to display
     const effectiveGenerations = getEffectiveGenerations(ancestors);
@@ -532,6 +541,14 @@ function getInnerRadius(generation) {
   };
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId);
+  
+  // Get the actual current color of the selected segment
+  const getSelectedSegmentColor = (personId) => {
+    if (!personId) return null;
+    const ancestors = buildAncestorArray();
+    const generation = ancestors.findIndex(gen => gen.includes(personId));
+    return colorOverrides[personId] || colorScale(generation >= 0 ? generation : 0);
+  };
 
   const handleColorChange = (newColor) => {
     onColorChange(selectedPersonId, newColor);
@@ -575,7 +592,7 @@ function getInnerRadius(generation) {
       {selectedPerson && (
         <PersonEditForm
           person={selectedPerson}
-          backgroundColor={colorOverrides[selectedPersonId] || colorScale(0)}
+          backgroundColor={getSelectedSegmentColor(selectedPersonId)}
           onColorChange={handleColorChange}
           onSave={(updatedPerson, isNew) => {
             onUpdatePeople(prev => {

@@ -69,6 +69,27 @@ export default function PersonEditForm({
     onClose(); // Add this to close all forms when setting center
   };
 
+  const [formData, setFormData] = useState({
+    firstName: person.firstName || '',
+    lastName: person.lastName || '',
+    birthDate: person.birthDate || '',
+    deathDate: person.deathDate || '',
+    parents: person.parents || []
+  });
+
+  // Initialize color state with the background color from the segment
+  const [color, setColor] = useState(backgroundColor);
+
+  // Update color when backgroundColor prop changes
+  useEffect(() => {
+    setColor(backgroundColor);
+  }, [backgroundColor]);
+
+  const handleColorChange = (newColor) => {
+    setColor(newColor);
+    onColorChange(newColor);
+  };
+
   return (
     <div 
       onClick={handleFormClick}
@@ -102,8 +123,8 @@ export default function PersonEditForm({
           {depth > 0 ? ` (Child)` : ''}
         </h3>
         <ColorPickerButton 
-          color={backgroundColor} 
-          onChange={onColorChange}
+          color={color || '#ffffff'} 
+          onChange={handleColorChange}
         />
       </div>
 
