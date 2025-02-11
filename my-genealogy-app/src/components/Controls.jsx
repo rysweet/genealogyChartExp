@@ -1,44 +1,99 @@
 import React from "react";
+import { 
+  FaSave, 
+  FaUpload, 
+  FaDownload, 
+  FaFileImport, 
+  FaFileExport,
+  FaPlus,
+  FaCompress
+} from 'react-icons/fa';
 
 export default function Controls({ 
   onImportGedcom, 
   onExportGedcom, 
-  onAddGeneration,
-  onSaveData,
+  onAddGeneration, 
+  onSaveData, 
   onLoadData,
-  onResetZoom  // Add new prop
+  onResetZoom 
 }) {
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+  // Hidden file input for GEDCOM import
+  const fileInputRef = React.useRef();
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
     if (file) {
       onImportGedcom(file);
-      e.target.value = null; // reset
     }
   };
 
   return (
-    <div style={{ marginBottom: "20px" }}>
-      <label htmlFor="gedcomFile">Import GEDCOM: </label>
+    <div style={{
+      display: 'flex',
+      gap: '10px',
+      padding: '10px',
+      backgroundColor: '#f5f5f5',
+      borderRadius: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    }}>
       <input
-        id="gedcomFile"
         type="file"
-        accept=".ged, text/plain"
-        onChange={handleFileUpload}
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+        accept=".ged,.gedcom"
       />
-      <button onClick={onExportGedcom} style={{ marginLeft: "10px" }}>
-        Export GEDCOM
+
+      <button
+        onClick={() => fileInputRef.current.click()}
+        title="Import GEDCOM"
+        style={{ padding: '8px' }}
+      >
+        <FaFileImport size={20} />
       </button>
-      <button onClick={onAddGeneration} style={{ marginLeft: "10px" }}>
-        + Generation
+
+      <button
+        onClick={onExportGedcom}
+        title="Export GEDCOM"
+        style={{ padding: '8px' }}
+      >
+        <FaFileExport size={20} />
       </button>
-      <button onClick={onSaveData} style={{ marginLeft: "10px" }}>
-        Save Data
+
+      <div style={{ width: '1px', backgroundColor: '#ddd', margin: '0 5px' }} />
+
+      <button
+        onClick={onSaveData}
+        title="Save Project"
+        style={{ padding: '8px' }}
+      >
+        <FaSave size={20} />
       </button>
-      <button onClick={onLoadData} style={{ marginLeft: "10px" }}>
-        Load Data
+
+      <button
+        onClick={onLoadData}
+        title="Load Project"
+        style={{ padding: '8px' }}
+      >
+        <FaUpload size={20} />
       </button>
-      <button onClick={onResetZoom} style={{ marginLeft: "10px" }}>
-        Reset Zoom
+
+      <div style={{ width: '1px', backgroundColor: '#ddd', margin: '0 5px' }} />
+
+      <button
+        onClick={onAddGeneration}
+        title="Add Generation"
+        style={{ padding: '8px' }}
+      >
+        <FaPlus size={20} />
+      </button>
+
+      <button
+        onClick={onResetZoom}
+        title="Reset Zoom"
+        style={{ padding: '8px' }}
+      >
+        <FaCompress size={20} />
       </button>
     </div>
   );
