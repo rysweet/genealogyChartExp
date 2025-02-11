@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import PersonEditForm from "./PersonEditForm";
+import PersonTooltip from "./PersonTooltip";
 
 // Geometry
 const RING_WIDTH = 60;
@@ -69,6 +70,8 @@ export default function GenealogyChart({
 
   // Move colorScale creation to component level
   const [colorScale] = useState(() => createColorScale(maxGenerations));
+  const [tooltip, setTooltip] = useState({ person: null, position: { x: 0, y: 0 } });
+  const tooltipTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -395,10 +398,11 @@ function getInnerRadius(generation) {
           continue;
         }
 
+        const person = peopleMap.get(personId);
         const segmentColor = personId ? getColorForPerson(personId, i) : "#eee";
         const textColor = getTextColorForBackground(segmentColor);
 
-        // Add clickable arc with improved handling
+        // Add hover events to the segment
         segmentGroup.append("path")
           .attr("d", arcGenerator)
           .attr("fill", segmentColor)
@@ -408,10 +412,19 @@ function getInnerRadius(generation) {
           .on("click", (event) => {
             event.stopPropagation();
             setSelectedPersonId(personId);
-          });
+          })
+          .on("mouseover", (event) => handleSegmentHover(event, person))
+          .on("mousemove", (event) => {
+            if (tooltip.person) {
+              setTooltip(prev => ({
+                ...prev,
+                position: { x: event.clientX, y: event.clientY }
+              }));
+            }
+          })
+          .on("mouseout", handleSegmentLeave);
 
         let label = "Unknown";
-        const person = peopleMap.get(personId);
         if (person) {
           label = person.firstName + " " + person.lastName + " (" + person.birthDate + " - " + person.deathDate + ")";
         }
@@ -499,6 +512,38 @@ function getInnerRadius(generation) {
     onColorChange(selectedPersonId, newColor);
   };
 
+  // Add mouseover/mouseout handlers
+  const handleSegmentHover = (event, person) => {
+    // Clear any existing timeout
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+    
+    // Set new timeout for showing tooltip
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setTooltip({
+        person,
+        position: { x: event.clientX, y: event.clientY }
+      });
+    }, 500); // 500ms delay
+  };
+
+  const handleSegmentLeave = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+    setTooltip({ person: null, position: { x: 0, y: 0 } });
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="genealogy-container" style={{ position: "relative" }}>
       <svg ref={svgRef}></svg>
@@ -523,6 +568,10 @@ function getInnerRadius(generation) {
           allPeople={people}
         />
       )}
+      <PersonTooltip 
+        person={tooltip.person}
+        position={tooltip.position}
+      />
     </div>
   );
 }
