@@ -54,11 +54,13 @@ export default function GenealogyChart({
   maxGenerations,
   centerPersonId,
   onUpdatePeople,
-  onSetCenter  // Add this prop
+  onSetCenter,
+  onResetZoom  // Add this prop
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const svgRef = useRef(null);
   const gRef = useRef(null);
+  const zoomRef = useRef(null);  // Create zoom function reference
   const width = 800;  // Move width/height to component level
   const height = 800;
 
@@ -86,6 +88,9 @@ export default function GenealogyChart({
           .attr("transform", event.transform);
       });
 
+    // Store zoom function for reset
+    zoomRef.current = zoom;
+
     // Apply zoom to svg element
     svg.call(zoom)
       .call(zoom.transform, d3.zoomIdentity);
@@ -106,6 +111,18 @@ export default function GenealogyChart({
       }
     };
   }, [width, height]);
+
+  // Export reset zoom function
+  useEffect(() => {
+    onResetZoom(() => {
+      if (svgRef.current && zoomRef.current) {
+        d3.select(svgRef.current)
+          .transition()
+          .duration(750)
+          .call(zoomRef.current.transform, d3.zoomIdentity);
+      }
+    });
+  }, [onResetZoom]);
 
   useEffect(() => {
     drawChart();
@@ -167,6 +184,61 @@ function getInnerRadius(generation) {
 
     // Create chart group inside zoom group
     const chartGroup = zoomGroup.append("g");
+
+    // Create a group for controls that won't be affected by zoom transforms
+    const controlsGroup = zoomGroup.append("g")
+      .attr("class", "controls")
+      .attr("transform", `translate(${width/2 - 60}, ${-height/2 + 20})`);
+
+    // Add zoom controls
+    controlsGroup.append("rect")
+      .attr("width", 50)
+      .attr("height", 60)
+      .attr("rx", 4)
+      .attr("fill", "rgba(255, 255, 255, 0.8)")
+      .attr("stroke", "#ccc");
+
+    // Zoom in button
+    controlsGroup.append("rect")
+      .attr("x", 5)
+      .attr("y", 5)
+      .attr("width", 40)
+      .attr("height", 24)
+      .attr("rx", 4)
+      .attr("fill", "white")
+      .attr("stroke", "#ccc")
+      .attr("cursor", "pointer")
+      .on("click", handleZoomIn);
+
+    controlsGroup.append("text")
+      .attr("x", 25)
+      .attr("y", 22)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#333")
+      .style("font-size", "16px")
+      .style("pointer-events", "none")
+      .text("+");
+
+    // Zoom out button
+    controlsGroup.append("rect")
+      .attr("x", 5)
+      .attr("y", 31)
+      .attr("width", 40)
+      .attr("height", 24)
+      .attr("rx", 4)
+      .attr("fill", "white")
+      .attr("stroke", "#ccc")
+      .attr("cursor", "pointer")
+      .on("click", handleZoomOut);
+
+    controlsGroup.append("text")
+      .attr("x", 25)
+      .attr("y", 48)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#333")
+      .style("font-size", "16px")
+      .style("pointer-events", "none")
+      .text("−");
 
     const colorScale = createColorScale(maxGenerations);
     const peopleMap = new Map(people.map((p) => [p.id, p]));
@@ -314,23 +386,36 @@ function getInnerRadius(generation) {
     }
   }, []);
 
-  const selectedPerson = people.find((p) => p.id === selectedPersonId);
-
-  const handleResetZoom = () => {
-    const svg = d3.select(svgRef.current);
-    svg.transition()
-      .duration(750)
-      .call(
-        d3.zoom().transform,
-        d3.zoomIdentity
-      );
+  const handleZoomIn = () => {
+    if (svgRef.current && zoomRef.current) {
+      const currentTransform = d3.zoomTransform(svgRef.current);
+      d3.select(svgRef.current)
+        .transition()
+        .duration(300)
+        .call(
+          zoomRef.current.transform,
+          currentTransform.scale(1.2)
+        );
+    }
   };
+
+  const handleZoomOut = () => {
+    if (svgRef.current && zoomRef.current) {
+      const currentTransform = d3.zoomTransform(svgRef.current);
+      d3.select(svgRef.current)
+        .transition()
+        .duration(300)
+        .call(
+          zoomRef.current.transform,
+          currentTransform.scale(0.8)
+        );
+    }
+  };
+
+  const selectedPerson = people.find((p) => p.id === selectedPersonId);
 
   return (
     <div className="genealogy-container" style={{ position: "relative" }}>
-      <div style={{ position: "absolute", top: 10, right: 10, zIndex: 1000 }}>
-        <button onClick={handleResetZoom}>Reset Zoom</button>
-      </div>
       <svg ref={svgRef}></svg>
       {selectedPerson && (
         <PersonEditForm

@@ -5,7 +5,8 @@ export default function Controls({
   onExportGedcom, 
   onAddGeneration,
   onSaveData,
-  onLoadData 
+  onLoadData,
+  onResetZoom  // Add new prop
 }) {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -35,6 +36,9 @@ export default function Controls({
       </button>
       <button onClick={onLoadData} style={{ marginLeft: "10px" }}>
         Load Data
+      </button>
+      <button onClick={onResetZoom} style={{ marginLeft: "10px" }}>
+        Reset Zoom
       </button>
     </div>
   );

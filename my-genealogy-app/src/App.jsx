@@ -13,6 +13,7 @@ function App() {
   const [people, setPeople] = useState([]);
   const [centerId, setCenterId] = useState("g0_1");
   const [persistence] = useState(() => new JsonFilePersistence());
+  const [resetZoom, setResetZoom] = useState(() => () => {});
 
   // Load sample data by default
   useEffect(() => {
@@ -80,13 +81,15 @@ function App() {
         onAddGeneration={addGeneration}
         onSaveData={handleSaveData}
         onLoadData={handleLoadData}
+        onResetZoom={() => resetZoom()}
       />
       <GenealogyChart
         people={people}
         maxGenerations={maxGenerations}
         centerPersonId={centerId}
         onUpdatePeople={setPeople}
-        onSetCenter={setCenterId}  // Add this prop
+        onSetCenter={setCenterId}
+        onResetZoom={setResetZoom}
       />
       <PeopleTable
         people={people}
