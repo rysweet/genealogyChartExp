@@ -116,6 +116,14 @@ function App() {
     }
   };
 
+  // Add function to get centered person's name
+  const getCenteredPersonName = () => {
+    const centeredPerson = people.find(p => p.id === centerId);
+    return centeredPerson 
+      ? `Direct Ancestors of ${centeredPerson.firstName} ${centeredPerson.lastName}` 
+      : 'Family Tree';
+  };
+
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -125,7 +133,12 @@ function App() {
       minWidth: '360px',
       alignItems: 'center'  // Center everything horizontally
     }}>
-      <h1>Genealogy Chart</h1>
+      <h1 style={{
+        fontFamily: 'Playfair Display, serif',
+        marginBottom: '20px'
+      }}>
+        {getCenteredPersonName()}
+      </h1>
       <Controls
         onImportGedcom={handleImportGedcom}
         onExportGedcom={handleExportGedcom}
