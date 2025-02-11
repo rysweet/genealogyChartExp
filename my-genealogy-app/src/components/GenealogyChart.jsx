@@ -73,6 +73,12 @@ export default function GenealogyChart({
   const [tooltip, setTooltip] = useState({ person: null, position: { x: 0, y: 0 } });
   const tooltipTimeoutRef = useRef(null);
 
+  // Add highlight style constants
+  const HIGHLIGHT_STROKE_WIDTH = 3;
+  const HIGHLIGHT_STROKE_COLOR = '#ff9800';
+  const DEFAULT_STROKE_WIDTH = 1;
+  const DEFAULT_STROKE_COLOR = '#333';
+
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -135,7 +141,7 @@ export default function GenealogyChart({
 
   useEffect(() => {
     drawChart();
-  }, [people, maxGenerations, centerPersonId, colorOverrides]);
+  }, [people, maxGenerations, centerPersonId, colorOverrides, selectedPersonId]); // Added selectedPersonId
 
   function approximateTextWidth(str, fontSize = DEFAULT_FONT_SIZE) {
     const avgCharWidth = fontSize * 0.6;
@@ -250,6 +256,44 @@ function getInnerRadius(generation) {
     return closestDescendantId ? [closestDescendantId, minGenerations] : null;
   }
 
+  // Updated segment click handler to clear tooltip
+  const handleSegmentClick = (event, personId) => {
+    event.stopPropagation();
+    setSelectedPersonId(personId);
+    // Clear tooltip when opening edit form
+    setTooltip({ person: null, position: { x: 0, y: 0 } });
+  };
+
+  // Add createSegmentPath function at component level
+  function createSegmentPath(segmentGroup, arcGenerator, personId, segmentColor) {
+    const person = people.find(p => p.id === personId);
+    return segmentGroup.append("path")
+      .attr("d", arcGenerator)
+      .attr("fill", segmentColor)
+      .attr("stroke", personId === selectedPersonId ? HIGHLIGHT_STROKE_COLOR : DEFAULT_STROKE_COLOR)
+      .attr("stroke-width", personId === selectedPersonId ? HIGHLIGHT_STROKE_WIDTH : DEFAULT_STROKE_WIDTH)
+      .attr("cursor", "pointer")
+      .style("pointer-events", "all")
+      .on("click", (event) => handleSegmentClick(event, personId))
+      .on("mouseover", (event) => handleSegmentHover(event, person))
+      .on("mousemove", (event) => {
+        if (tooltip.person) {
+          setTooltip(prev => ({
+            ...prev,
+            position: { x: event.clientX, y: event.clientY }
+          }));
+        }
+      })
+      .on("mouseout", handleSegmentLeave);
+  }
+
+  // Add center click handler
+  const handleCenterClick = (event) => {
+    event.stopPropagation();
+    setSelectedPersonId(centerPersonId);
+    setTooltip({ person: null, position: { x: 0, y: 0 } });
+  };
+
   function drawChart() {
     if (!gRef.current) return;
 
@@ -346,20 +390,18 @@ function getInnerRadius(generation) {
     const centerPerson = peopleMap.get(centerPersonId);
     const centerBgColor = colorOverrides[centerPersonId] || colorScale(0);
 
-    // Use existing chartGroup instead of creating a new one
+    // Update center circle to handle highlighting
     chartGroup.append("circle")
       .attr("cx", 0)
       .attr("cy", 0)
       .attr("r", CENTER_RADIUS)
       .attr("fill", centerBgColor)
-      .attr("stroke", "#333")
+      .attr("stroke", centerPersonId === selectedPersonId ? HIGHLIGHT_STROKE_COLOR : DEFAULT_STROKE_COLOR)
+      .attr("stroke-width", centerPersonId === selectedPersonId ? HIGHLIGHT_STROKE_WIDTH : DEFAULT_STROKE_WIDTH)
       .attr("cursor", "pointer")
       .style("pointer-events", "all")
-      .on("click", (event) => { 
-        event.stopPropagation();
-        setSelectedPersonId(centerPersonId);
-      });
-    
+      .on("click", handleCenterClick);
+
     console.log('Center color:', centerBgColor, 'Text color:', getTextColorForBackground(centerBgColor));
     
     chartGroup.append("text")
@@ -402,27 +444,8 @@ function getInnerRadius(generation) {
         const segmentColor = personId ? getColorForPerson(personId, i) : "#eee";
         const textColor = getTextColorForBackground(segmentColor);
 
-        // Add hover events to the segment
-        segmentGroup.append("path")
-          .attr("d", arcGenerator)
-          .attr("fill", segmentColor)
-          .attr("stroke", "#333")
-          .attr("cursor", "pointer")
-          .style("pointer-events", "all")
-          .on("click", (event) => {
-            event.stopPropagation();
-            setSelectedPersonId(personId);
-          })
-          .on("mouseover", (event) => handleSegmentHover(event, person))
-          .on("mousemove", (event) => {
-            if (tooltip.person) {
-              setTooltip(prev => ({
-                ...prev,
-                position: { x: event.clientX, y: event.clientY }
-              }));
-            }
-          })
-          .on("mouseout", handleSegmentLeave);
+        // Use the new createSegmentPath function
+        createSegmentPath(segmentGroup, arcGenerator, personId, segmentColor);
 
         let label = "Unknown";
         if (person) {
