@@ -4,7 +4,8 @@ export default function PeopleTable({
   people, 
   onSetCenter, 
   onUpdatePeople,
-  selectedId  // Add this prop
+  selectedId,
+  style = {}  // Add style prop
 }) {
   if (!people || people.length === 0) {
     return <div>No people loaded.</div>;
@@ -33,12 +34,12 @@ export default function PeopleTable({
     <div 
       ref={tableRef}
       style={{ 
-        position: 'relative',
-        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: 'white',  // Ensure table has a solid background
-        zIndex: 0  // Ensure table stays in its own stacking context
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        ...style  // Merge passed styles
       }}
     >
       <div style={{ 
