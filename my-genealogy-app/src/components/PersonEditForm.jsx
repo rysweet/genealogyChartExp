@@ -10,7 +10,8 @@ export default function PersonEditForm({
   allPeople,  // Add this prop to access all people
   depth = 0,   // Add depth to control nesting
   backgroundColor,
-  onColorChange
+  onColorChange,
+  onSelectPerson  // Add to prop list
 }) {
   const formRef = useRef(null);
   const [showChildren, setShowChildren] = useState(false);
@@ -127,6 +128,30 @@ export default function PersonEditForm({
     onSave({ ...personWithDefaults, ...extendedData, [field]: value });
   };
 
+  const getParentNames = () => {
+    if (!personWithDefaults.parents || !allPeople) return [];
+    
+    return personWithDefaults.parents.map(parentId => {
+      const parent = allPeople.find(p => p.id === parentId);
+      return {
+        id: parentId,
+        name: parent 
+          ? `${parent.firstName || ''} ${parent.lastName || ''}`.trim() 
+          : 'Unknown'
+      };
+    });
+  };
+
+  const handleParentClick = (parentId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSave(personWithDefaults); // Save current changes
+    onClose(); // Close current form
+    if (onSelectPerson) {  // Add safety check
+      onSelectPerson(parentId);
+    }
+  };
+
   return (
     <div 
       onClick={handleFormClick}
@@ -238,11 +263,33 @@ export default function PersonEditForm({
             />
           </div>
           <div>
-            <label>Parents (IDs, comma-separated): </label>
-            <input
-              value={personWithDefaults.parents ? personWithDefaults.parents.join(",") : ""}
-              onChange={(e) => handleParentsChange(e.target.value)}
-            />
+            <label>Parents: </label>
+            <div style={{ 
+              marginTop: '4px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
+              {getParentNames().map(parent => (
+                <a
+                  key={parent.id}
+                  href="#"
+                  onClick={(e) => handleParentClick(parent.id, e)}
+                  style={{
+                    color: '#0066cc',
+                    textDecoration: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {parent.name}
+                </a>
+              ))}
+              {getParentNames().length === 0 && (
+                <span style={{ color: '#666', fontStyle: 'italic' }}>
+                  No parents specified
+                </span>
+              )}
+            </div>
           </div>
           
           <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
@@ -308,6 +355,7 @@ export default function PersonEditForm({
                   onSave={onSave}
                   onClose={onClose}
                   onSetCenter={onSetCenter}
+                  onSelectPerson={onSelectPerson}  // Add this prop
                   allPeople={allPeople}
                   depth={depth + 1}
                 />

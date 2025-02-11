@@ -618,7 +618,7 @@ function getInnerRadius(generation) {
   return (
     <div className="genealogy-container" style={{ position: "relative" }}>
       <svg ref={svgRef}></svg>
-      {selectedPersonId && (  // Use prop instead of local state
+      {selectedPersonId && (
         <PersonEditForm
           person={people.find(p => p.id === selectedPersonId)}
           backgroundColor={getSelectedSegmentColor(selectedPersonId)}
@@ -631,8 +631,9 @@ function getInnerRadius(generation) {
               return prev.map(p => p.id === updatedPerson.id ? updatedPerson : p);
             });
           }}
-          onClose={() => onSelectPerson(null)}  // Clear selection through prop
+          onClose={() => onSelectPerson(null)}
           onSetCenter={onSetCenter}
+          onSelectPerson={onSelectPerson}  // Add this prop
           allPeople={people}
         />
       )}
