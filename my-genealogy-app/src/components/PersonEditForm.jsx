@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ColorPickerButton from "./ColorPickerButton";
-import { FaChevronRight, FaChevronLeft } from 'react-icons/fa';
+import { FaChevronRight, FaChevronLeft, FaTimes } from 'react-icons/fa';
 
 export default function PersonEditForm({ 
   person, 
@@ -123,7 +123,7 @@ export default function PersonEditForm({
         left: depth === 0 ? '50%' : 'auto',
         transform: depth === 0 ? 'translate(-50%, -50%)' : 'none',
         backgroundColor: 'white',
-        padding: '20px',
+        padding: '20px 40px 20px 20px',  // Increased right padding to accommodate close button
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
         zIndex: 2000,
@@ -137,11 +137,33 @@ export default function PersonEditForm({
       }} 
       ref={formRef}
     >
+      {/* Close button - moved outside header */}
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          right: '10px',
+          top: '10px',
+          background: 'none',
+          border: 'none',
+          padding: '8px',
+          cursor: 'pointer',
+          color: '#666',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 3
+        }}
+        title="Close"
+      >
+        <FaTimes size={16} />
+      </button>
+
       {/* Header area */}
       <div style={{ 
         position: 'relative',
         marginBottom: '20px',
-        paddingRight: '40px'  // Make room for color picker
+        paddingRight: '40px'  // Reduced since close button moved
       }}>
         <h3 style={{ 
           margin: 0,
@@ -153,7 +175,7 @@ export default function PersonEditForm({
         
         <div style={{
           position: 'absolute',
-          right: '0',
+          right: '0',  // Moved color picker to previous close button position
           top: '0'
         }}>
           <ColorPickerButton 
