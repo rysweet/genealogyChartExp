@@ -49,6 +49,15 @@ function getTextColorForBackground(backgroundColor) {
   return brightness > 125 ? "#003300" : "#ffffff";
 }
 
+function calculateDescendantColor(baseColor, generation, totalGenerations) {
+  const color = d3.color(baseColor);
+  const targetColor = d3.color("#ffffff");  // Target color for furthest descendants
+  const t = generation / (totalGenerations - 1);  // Calculate interpolation factor
+  
+  // Interpolate between the base color and target color
+  return d3.interpolateRgb(color, targetColor)(t);
+}
+
 export default function GenealogyChart({
   people,
   maxGenerations,
@@ -193,14 +202,57 @@ function getInnerRadius(generation) {
 
   // Helper to get color for a person/generation
   function getColorForPerson(personId, generation) {
+    // Check if this person has a color override
     if (colorOverrides[personId]) {
-      // Calculate brightened color for descendants
-      const baseColor = d3.color(colorOverrides[personId]);
-      const maxBrightness = 0.9;
-      const brightnessStep = (maxBrightness - 0.3) / maxGenerations;
-      return baseColor.brighter(generation * brightnessStep);
+      return colorOverrides[personId];
     }
+
+    // Look for descendants with color overrides
+    const descendantWithColor = findNearestColoredDescendant(personId, people, colorOverrides);
+    if (descendantWithColor) {
+      const [descendantId, generations] = descendantWithColor;
+      return calculateDescendantColor(colorOverrides[descendantId], generations, maxGenerations);
+    }
+    
     return colorScale(generation);
+  }
+
+  function findNearestColoredDescendant(personId, people, colorOverrides) {
+    // Find all immediate descendants (people who have this person as a parent)
+    const descendants = people.filter(p => 
+      p.parents && p.parents.includes(personId)
+    );
+
+    let minGenerations = Infinity;
+    let closestDescendantId = null;
+
+    // Check each descendant and their descendants recursively
+    function searchDescendants(currentId, depth = 0, visited = new Set()) {
+      if (visited.has(currentId)) return;
+      visited.add(currentId);
+
+      // If this descendant has a color and is closer than what we've found
+      if (colorOverrides[currentId] && depth < minGenerations) {
+        minGenerations = depth;
+        closestDescendantId = currentId;
+      }
+
+      // Check this person's descendants
+      const currentDescendants = people.filter(p => 
+        p.parents && p.parents.includes(currentId)
+      );
+
+      for (const descendant of currentDescendants) {
+        searchDescendants(descendant.id, depth + 1, visited);
+      }
+    }
+
+    // Start search from each immediate descendant
+    for (const descendant of descendants) {
+      searchDescendants(descendant.id);
+    }
+
+    return closestDescendantId ? [closestDescendantId, minGenerations] : null;
   }
 
   function drawChart() {
