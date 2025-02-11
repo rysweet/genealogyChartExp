@@ -16,6 +16,9 @@ export default function PersonEditForm({
   const formRef = useRef(null);
   const [showChildren, setShowChildren] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
   // Add default values for all extended fields
   const [extendedData, setExtendedData] = useState({
@@ -152,14 +155,54 @@ export default function PersonEditForm({
     }
   };
 
+  const handleMouseDown = (e) => {
+    // Only start drag if clicking the header or form title
+    if (e.target.closest('.draggable-area')) {
+      setIsDragging(true);
+      const rect = formRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      e.preventDefault(); // Prevent text selection while dragging
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
+
   return (
     <div 
+      ref={formRef}
       onClick={handleFormClick}
       style={{
         position: depth === 0 ? 'fixed' : 'relative',
-        top: depth === 0 ? '50%' : 'auto',
-        left: depth === 0 ? '50%' : 'auto',
-        transform: depth === 0 ? 'translate(-50%, -50%)' : 'none',
+        top: depth === 0 ? position.y || '50%' : 'auto',
+        left: depth === 0 ? position.x || '50%' : 'auto',
+        transform: depth === 0 && !position.x ? 'translate(-50%, -50%)' : 'none',
+        userSelect: isDragging ? 'none' : 'auto',
+        cursor: isDragging ? 'grabbing' : 'grab',
         backgroundColor: 'white',
         padding: '20px 40px 20px 20px',  // Increased right padding to accommodate close button
         borderRadius: '8px',
@@ -173,9 +216,42 @@ export default function PersonEditForm({
         maxWidth: '90vw',
         minWidth: '400px'
       }} 
-      ref={formRef}
     >
-      {/* Close button - moved outside header */}
+      {/* Draggable header with integrated color picker */}
+      <div 
+        className="draggable-area form-header"
+        onMouseDown={handleMouseDown}
+        style={{
+          padding: '10px',
+          marginBottom: '10px',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          backgroundColor: '#f5f5f5',
+          borderBottom: '1px solid #ddd',
+          borderRadius: '8px 8px 0 0',
+          position: 'relative', // Add this for absolute positioning of color picker
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <h3 
+          className="draggable-area"
+          style={{ 
+            margin: 0,
+            cursor: isDragging ? 'grabbing' : 'grab'
+          }}
+        >
+          {personWithDefaults.firstName} {personWithDefaults.lastName}
+          {depth > 0 ? ` (Child)` : ''}
+        </h3>
+        
+        <ColorPickerButton 
+          color={color || '#ffffff'} 
+          onChange={handleColorChange}
+        />
+      </div>
+
+      {/* Close button */}
       <button
         onClick={onClose}
         style={{
@@ -197,38 +273,12 @@ export default function PersonEditForm({
         <FaTimes size={16} />
       </button>
 
-      {/* Header area */}
-      <div style={{ 
-        position: 'relative',
-        marginBottom: '20px',
-        paddingRight: '40px'  // Reduced since close button moved
-      }}>
-        <h3 style={{ 
-          margin: 0,
-          paddingRight: '30px'  // Make room for color picker
-        }}>
-          {personWithDefaults.firstName} {personWithDefaults.lastName}
-          {depth > 0 ? ` (Child)` : ''}
-        </h3>
-        
-        <div style={{
-          position: 'absolute',
-          right: '0',  // Moved color picker to previous close button position
-          top: '0'
-        }}>
-          <ColorPickerButton 
-            color={color || '#ffffff'} 
-            onChange={handleColorChange}
-          />
-        </div>
-      </div>
-
       {/* Main content area */}
       <div style={{ 
         display: 'flex',
         position: 'relative',
         paddingRight: '20px',
-        alignItems: 'stretch',  // Changed from flex-start to stretch
+        alignItems: 'stretch',
         gap: '20px'
       }}>
         <div className="basic-form" style={{ 

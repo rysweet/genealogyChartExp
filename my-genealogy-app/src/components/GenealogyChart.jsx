@@ -531,7 +531,7 @@ function getInnerRadius(generation) {
     const handleBackgroundClick = (e) => {
       // Only close if clicking directly on the container div
       if (e.target === e.currentTarget) {
-        setSelectedPersonId(null);
+        onSelectPerson(null); // Use the prop instead of direct state setter
       }
     };
 
@@ -541,7 +541,7 @@ function getInnerRadius(generation) {
       container.addEventListener('click', handleBackgroundClick);
       return () => container.removeEventListener('click', handleBackgroundClick);
     }
-  }, []);
+  }, [onSelectPerson]); // Add onSelectPerson to dependencies
 
   const handleZoomIn = () => {
     if (svgRef.current && zoomRef.current) {

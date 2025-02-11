@@ -15,13 +15,13 @@ import {
   setSelectedPerson,
   setColorOverride,
   updatePerson,
-  replaceAllPeople  // Add this import
+  replaceAllPeople
 } from './store/genealogySlice';
 
 function App() {
   const dispatch = useDispatch();
-  const [resetZoom, setResetZoom] = useState(() => () => {});  // Add this back
-  const [persistence] = useState(() => new JsonFilePersistence());  // Add this back
+  const [resetZoom, setResetZoom] = useState(() => () => {});
+  const [persistence] = useState(() => new JsonFilePersistence());
   
   const {
     people,
