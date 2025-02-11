@@ -15,6 +15,7 @@ function App() {
   const [persistence] = useState(() => new JsonFilePersistence());
   const [resetZoom, setResetZoom] = useState(() => () => {});
   const [colorOverrides, setColorOverrides] = useState({});
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
 
   // Load sample data by default
   useEffect(() => {
@@ -105,11 +106,13 @@ function App() {
         onResetZoom={setResetZoom}
         colorOverrides={colorOverrides}
         onColorChange={handleColorChange}
+        onSelectPerson={setSelectedPersonId}  // Add this prop
       />
       <PeopleTable
         people={people}
         onSetCenter={(personId) => setCenterId(personId)}
         onUpdatePeople={setPeople}
+        selectedId={selectedPersonId}  // Add this prop
       />
     </div>
   );

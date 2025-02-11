@@ -59,7 +59,8 @@ export default function GenealogyChart({
   onSetCenter,
   onResetZoom,  // Add this prop
   colorOverrides = {},  // New prop for custom colors
-  onColorChange        // New prop for handling color changes
+  onColorChange,        // New prop for handling color changes
+  onSelectPerson,  // Add this prop
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const svgRef = useRef(null);
@@ -260,7 +261,7 @@ function getInnerRadius(generation) {
   const handleSegmentClick = (event, personId) => {
     event.stopPropagation();
     setSelectedPersonId(personId);
-    // Clear tooltip when opening edit form
+    onSelectPerson(personId);  // Add this line
     setTooltip({ person: null, position: { x: 0, y: 0 } });
   };
 
@@ -291,6 +292,7 @@ function getInnerRadius(generation) {
   const handleCenterClick = (event) => {
     event.stopPropagation();
     setSelectedPersonId(centerPersonId);
+    onSelectPerson(centerPersonId);  // Add this line
     setTooltip({ person: null, position: { x: 0, y: 0 } });
   };
 
