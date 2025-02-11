@@ -3,7 +3,7 @@ import ColorPickerButton from "./ColorPickerButton";
 import { FaChevronRight, FaChevronLeft, FaTimes } from 'react-icons/fa';
 
 export default function PersonEditForm({ 
-  person, 
+  person = {}, // Add default empty object
   onSave, 
   onClose, 
   onSetCenter,
@@ -15,21 +15,34 @@ export default function PersonEditForm({
   const formRef = useRef(null);
   const [showChildren, setShowChildren] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Add default values for all extended fields
   const [extendedData, setExtendedData] = useState({
-    birthPlace: person.birthPlace || '',
-    deathPlace: person.deathPlace || '',
-    occupation: person.occupation || '',
-    spouses: person.spouses || [],
-    siblings: person.siblings || [],
-    notes: person.notes || '',
-    sex: person.sex || '',
-    sources: person.sources || []
+    birthPlace: person?.birthPlace || '',
+    deathPlace: person?.deathPlace || '',
+    occupation: person?.occupation || '',
+    spouses: person?.spouses || [],
+    siblings: person?.siblings || [],
+    notes: person?.notes || '',
+    sex: person?.sex || '',
+    sources: person?.sources || []
   });
 
-  // Find children of this person
-  const children = allPeople.filter(p => 
-    p.parents && p.parents.includes(person.id)
-  );
+  // Ensure person has all required base fields
+  const personWithDefaults = {
+    id: person?.id || '',
+    firstName: person?.firstName || '',
+    lastName: person?.lastName || '',
+    birthDate: person?.birthDate || '',
+    deathDate: person?.deathDate || '',
+    parents: person?.parents || [],
+    ...person  // Preserve any other fields
+  };
+
+  // Update references to use personWithDefaults instead of person directly
+  const children = allPeople?.filter(p => 
+    p.parents && p.parents.includes(personWithDefaults.id)
+  ) || [];
 
   // Prevent events from bubbling up to parent forms and background
   const handleFormClick = (e) => {
@@ -53,13 +66,13 @@ export default function PersonEditForm({
   }, [onClose]);
 
   const handleChange = (field, value) => {
-    const updatedPerson = { ...person, [field]: value };
+    const updatedPerson = { ...personWithDefaults, [field]: value };
     onSave(updatedPerson);
   };
 
   const handleParentsChange = (value) => {
     const ids = value.split(",").map(s => s.trim()).filter(Boolean);
-    const updatedPerson = { ...person, parents: ids };
+    const updatedPerson = { ...personWithDefaults, parents: ids };
     onSave(updatedPerson);
   };
 
@@ -67,26 +80,26 @@ export default function PersonEditForm({
     const newChild = {
       id: `child_${Date.now()}`,
       firstName: "New",
-      lastName: person.lastName,
+      lastName: personWithDefaults.lastName,
       birthDate: "",
       deathDate: "",
-      parents: [person.id]
+      parents: [personWithDefaults.id]
     };
     onSave(newChild, true); // true flag indicates this is a new person
     setShowChildren(true);
   };
 
   const handleSetCenter = () => {
-    onSetCenter(person.id);
+    onSetCenter(personWithDefaults.id);
     onClose(); // Add this to close all forms when setting center
   };
 
   const [formData, setFormData] = useState({
-    firstName: person.firstName || '',
-    lastName: person.lastName || '',
-    birthDate: person.birthDate || '',
-    deathDate: person.deathDate || '',
-    parents: person.parents || []
+    firstName: personWithDefaults.firstName || '',
+    lastName: personWithDefaults.lastName || '',
+    birthDate: personWithDefaults.birthDate || '',
+    deathDate: personWithDefaults.deathDate || '',
+    parents: personWithDefaults.parents || []
   });
 
   // Initialize color state with the background color from the segment
@@ -111,7 +124,7 @@ export default function PersonEditForm({
       ...prev,
       [field]: value
     }));
-    onSave({ ...person, ...extendedData, [field]: value });
+    onSave({ ...personWithDefaults, ...extendedData, [field]: value });
   };
 
   return (
@@ -169,7 +182,7 @@ export default function PersonEditForm({
           margin: 0,
           paddingRight: '30px'  // Make room for color picker
         }}>
-          {person.firstName} {person.lastName}
+          {personWithDefaults.firstName} {personWithDefaults.lastName}
           {depth > 0 ? ` (Child)` : ''}
         </h3>
         
@@ -199,35 +212,35 @@ export default function PersonEditForm({
           <div>
             <label>First Name: </label>
             <input
-              value={person.firstName || ""}
+              value={personWithDefaults.firstName || ""}
               onChange={(e) => handleChange("firstName", e.target.value)}
             />
           </div>
           <div>
             <label>Last Name: </label>
             <input
-              value={person.lastName || ""}
+              value={personWithDefaults.lastName || ""}
               onChange={(e) => handleChange("lastName", e.target.value)}
             />
           </div>
           <div>
             <label>Birth Date: </label>
             <input
-              value={person.birthDate || ""}
+              value={personWithDefaults.birthDate || ""}
               onChange={(e) => handleChange("birthDate", e.target.value)}
             />
           </div>
           <div>
             <label>Death Date: </label>
             <input
-              value={person.deathDate || ""}
+              value={personWithDefaults.deathDate || ""}
               onChange={(e) => handleChange("deathDate", e.target.value)}
             />
           </div>
           <div>
             <label>Parents (IDs, comma-separated): </label>
             <input
-              value={person.parents ? person.parents.join(",") : ""}
+              value={personWithDefaults.parents ? personWithDefaults.parents.join(",") : ""}
               onChange={(e) => handleParentsChange(e.target.value)}
             />
           </div>

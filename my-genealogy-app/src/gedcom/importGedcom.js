@@ -1,169 +1,92 @@
 export async function importGedcomFile(file) {
-  const text = await file.text();
-  const peopleById = {};
-  const familiesById = {};
-  let currentRecord = null;
-  let currentType = null;
-  const lines = text.split(/\\r?\\n/);
+  try {
+    console.log("Reading GEDCOM file...");
+    const text = await file.text();
+    console.log("GEDCOM file contents (first 200 chars):", text.substring(0, 200));
 
-  function finishRecord() {
-    if (!currentRecord || !currentType) return;
-    if (currentType === "INDI") {
-      peopleById[currentRecord.id] = currentRecord;
-    } else if (currentType === "FAM") {
-      familiesById[currentRecord.id] = currentRecord;
+    // Basic GEDCOM validation
+    if (!text.includes('0 HEAD') || !text.includes('0 @')) {
+      throw new Error('File does not appear to be valid GEDCOM format');
     }
-    currentRecord = null;
-    currentType = null;
-  }
 
-  function initializeNewRecord(id, type) {
-    if (type === "INDI") {
-      return {
-        id,
-        gedcomId: id,
-        firstName: "",
-        lastName: "",
-        birthDate: "",
-        birthPlace: "",
-        deathDate: "",
-        deathPlace: "",
-        occupation: "",
-        parents: [],
-        spouses: [],
-        siblings: [],
-        notes: "",
-        sex: "",
-        sources: []
-      };
-    }
-    if (type === "FAM") {
-      return { id, husb: null, wife: null, children: [] };
-    }
-  }
+    const lines = text.split('\n').map(line => line.trim());
+    console.log(`Processing ${lines.length} lines of GEDCOM data`);
 
-  lines.forEach((line) => {
-    const parts = line.trim().split(" ");
-    if (parts.length < 2) return;
-    const level = parts[0];
-    const tagOrId = parts[1];
+    // First pass: collect all individuals and families
+    const people = new Map();
+    const families = new Map();
+    let currentRecord = null;
+    let currentType = null;
 
-    if (level === "0" && tagOrId.startsWith("@") && parts.length >= 3) {
-      const recordType = parts[2];
-      finishRecord();
-      if (recordType === "INDI") {
-        currentRecord = initializeNewRecord(tagOrId, "INDI");
-        currentType = "INDI";
-      } else if (recordType === "FAM") {
-        currentRecord = initializeNewRecord(tagOrId, "FAM");
-        currentType = "FAM";
-      }
-    } else if (currentType === "INDI") {
-      const rest = line.trim().substring(2).trim();
-      if (rest.startsWith("NAME")) {
-        let nameVal = rest.replace("NAME", "").trim();
-        const nameParts = nameVal.split("/");
-        if (nameParts.length >= 2) {
-          currentRecord.firstName = nameParts[0].trim();
-          currentRecord.lastName = nameParts[1].trim();
+    for (const line of lines) {
+      const level = parseInt(line.charAt(0));
+      const parts = line.substring(2).split(' ');
+      
+      // New record
+      if (level === 0) {
+        if (line.includes('INDI')) {
+          const id = parts[0].replace(/@/g, '');
+          currentRecord = { id, firstName: '', lastName: '', birthDate: '', deathDate: '', parents: [] };
+          currentType = 'INDI';
+          people.set(id, currentRecord);
+        } else if (line.includes('FAM')) {
+          const famId = parts[0].replace(/@/g, '');
+          currentRecord = { id: famId, children: [], parents: [] };
+          currentType = 'FAM';
+          families.set(famId, currentRecord);
         } else {
-          currentRecord.firstName = nameVal;
+          currentRecord = null;
+          currentType = null;
         }
-      } else if (rest.startsWith("GIVN")) {
-        currentRecord.firstName = rest.replace("GIVN", "").trim();
-      } else if (rest.startsWith("SURN")) {
-        currentRecord.lastName = rest.replace("SURN", "").trim();
-      } else if (rest.startsWith("BIRT")) {
-      } else if (rest.startsWith("DEAT")) {
-      } else if (rest.startsWith("DATE")) {
-        if (line.includes("BIRT")) {
-          currentRecord.birthDate = rest.replace("DATE", "").trim();
-        } else if (line.includes("DEAT")) {
-          currentRecord.deathDate = rest.replace("DATE", "").trim();
-        } else {
-          if (!currentRecord.birthDate) {
-            currentRecord.birthDate = rest.replace("DATE", "").trim();
-          } else {
-            currentRecord.deathDate = rest.replace("DATE", "").trim();
-          }
-        }
-      } else if (rest.startsWith("PLAC")) {
-        if (line.includes("BIRT")) {
-          currentRecord.birthPlace = rest.replace("PLAC", "").trim();
-        } else if (line.includes("DEAT")) {
-          currentRecord.deathPlace = rest.replace("PLAC", "").trim();
-        }
-      } else if (rest.startsWith("SEX")) {
-        currentRecord.sex = rest.replace("SEX", "").trim();
-      } else if (rest.startsWith("OCCU")) {
-        currentRecord.occupation = rest.replace("OCCU", "").trim();
-      } else if (rest.startsWith("NOTE")) {
-        currentRecord.notes += rest.replace("NOTE", "").trim() + "\n";
-      } else if (rest.startsWith("SOUR")) {
-        currentRecord.sources.push(rest.replace("SOUR", "").trim());
+        continue;
       }
-    } else if (currentType === "FAM") {
-      const rest = line.trim().substring(2).trim();
-      if (rest.startsWith("HUSB")) {
-        const tokens = rest.split(" ");
-        if (tokens.length >= 2) {
-          currentRecord.husb = tokens[1];
+
+      if (!currentRecord) continue;
+
+      // Process individual records
+      if (currentType === 'INDI') {
+        if (line.includes('1 NAME')) {
+          const nameParts = line.substring(7).split('/').map(p => p.trim().replace(/@/g, ''));
+          currentRecord.firstName = nameParts[0] || '';
+          currentRecord.lastName = nameParts[1] || '';
+        } else if (line.includes('2 DATE') && lines[lines.indexOf(line) - 1]?.includes('1 BIRT')) {
+          currentRecord.birthDate = line.substring(7).trim();
+        } else if (line.includes('2 DATE') && lines[lines.indexOf(line) - 1]?.includes('1 DEAT')) {
+          currentRecord.deathDate = line.substring(7).trim();
         }
-      } else if (rest.startsWith("WIFE")) {
-        const tokens = rest.split(" ");
-        if (tokens.length >= 2) {
-          currentRecord.wife = tokens[1];
+      }
+      // Process family records
+      else if (currentType === 'FAM') {
+        if (line.includes('1 HUSB')) {
+          const husbId = parts[1].replace(/@/g, '');
+          currentRecord.parents.push(husbId);
+        } else if (line.includes('1 WIFE')) {
+          const wifeId = parts[1].replace(/@/g, '');
+          currentRecord.parents.push(wifeId);
+        } else if (line.includes('1 CHIL')) {
+          const childId = parts[1].replace(/@/g, '');
+          currentRecord.children.push(childId);
         }
-      } else if (rest.startsWith("CHIL")) {
-        const tokens = rest.split(" ");
-        if (tokens.length >= 2) {
-          currentRecord.children.push(tokens[1]);
-        }
-      } else if (rest.startsWith("MARR")) {
-        currentRecord.marriageDate = "";
-        currentRecord.marriagePlace = "";
-      } else if (rest.startsWith("DIV")) {
-        currentRecord.divorceDate = "";
       }
     }
-  });
-  finishRecord();
-  Object.values(familiesById).forEach((fam) => {
-    const father = fam.husb;
-    const mother = fam.wife;
-    fam.children.forEach((childId) => {
-      if (peopleById[childId]) {
-        peopleById[childId].parents = [];
-        if (father) peopleById[childId].parents.push(father);
-        if (mother) peopleById[childId].parents.push(mother);
-      }
-    });
-  });
 
-  Object.values(familiesById).forEach((fam) => {
-    if (fam.husb && fam.wife) {
-      const marriage = {
-        spouseId: fam.wife,
-        marriageDate: fam.marriageDate,
-        marriagePlace: fam.marriagePlace,
-        divorceDate: fam.divorceDate
-      };
-      if (peopleById[fam.husb]) {
-        peopleById[fam.husb].spouses.push(marriage);
-      }
-      if (peopleById[fam.wife]) {
-        peopleById[fam.wife].spouses.push({
-          ...marriage,
-          spouseId: fam.husb
-        });
+    // Second pass: link children to parents
+    for (const family of families.values()) {
+      for (const childId of family.children) {
+        const child = people.get(childId);
+        if (child) {
+          child.parents = family.parents;
+        }
       }
     }
-    fam.children.forEach((childId) => {
-      if (peopleById[childId]) {
-        peopleById[childId].siblings = fam.children.filter(id => id !== childId);
-      }
-    });
-  });
 
-  return Object.values(peopleById);
+    console.log('Parsed people:', Array.from(people.values()));
+    console.log('Parsed families:', Array.from(families.values()));
+    
+    return Array.from(people.values());
+
+  } catch (err) {
+    console.error("GEDCOM parsing error:", err);
+    throw new Error(`GEDCOM parsing failed: ${err.message}`);
+  }
 }

@@ -1,10 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
-import sampleData from '../data/sampleData.json';  // Import sample data
+import sampleData from '../data/sampleData.json';
 
 const initialState = {
-  people: sampleData,  // Initialize with sample data
+  people: [],  // Start with empty array, not sampleData
   maxGenerations: 8,
-  centerId: sampleData.length > 0 ? sampleData[0].id : null,  // Set initial center
+  centerId: null,
   selectedPersonId: null,
   colorOverrides: {}
 };
@@ -33,6 +33,20 @@ const genealogySlice = createSlice({
     },
     setColorOverride: (state, action) => {
       state.colorOverrides[action.payload.id] = action.payload.color;
+    },
+    replaceAllPeople: (state, action) => {
+      if (!Array.isArray(action.payload)) {
+        console.error('replaceAllPeople received invalid data:', action.payload);
+        return;
+      }
+      state.people = action.payload;
+      state.centerId = action.payload[0]?.id || null;
+      state.selectedPersonId = null;
+      state.colorOverrides = {};
+      state.maxGenerations = 4; // Reset to default view
+      
+      // Force a re-render by updating a timestamp
+      state.lastUpdate = Date.now();
     }
   }
 });
@@ -43,7 +57,8 @@ export const {
   setMaxGenerations,
   setCenterId,
   setSelectedPerson,
-  setColorOverride
+  setColorOverride,
+  replaceAllPeople  // Add this export
 } = genealogySlice.actions;
 
 export default genealogySlice.reducer;

@@ -14,7 +14,8 @@ import {
   setCenterId,
   setSelectedPerson,
   setColorOverride,
-  updatePerson
+  updatePerson,
+  replaceAllPeople  // Add this import
 } from './store/genealogySlice';
 
 function App() {
@@ -40,15 +41,33 @@ function App() {
 
   const handleImportGedcom = async (file) => {
     try {
+      console.log("Starting GEDCOM import for file:", file.name);
       const importedPeople = await importGedcomFile(file);
-      console.log("Imported people:", importedPeople);
-      if (importedPeople.length > 0) {
-        const importedCenterId = importedPeople[0].id;
-        dispatch(setCenterId(importedCenterId));
+      console.log("Raw imported data:", importedPeople);
+      
+      if (!importedPeople) {
+        throw new Error('No data returned from GEDCOM import');
       }
-      dispatch(setPeople(importedPeople));
+
+      // Validate the imported data structure
+      if (!Array.isArray(importedPeople)) {
+        console.error('Invalid data structure:', importedPeople);
+        throw new Error('GEDCOM import returned invalid data structure');
+      }
+
+      if (importedPeople.length === 0) {
+        throw new Error('No people found in GEDCOM file');
+      }
+
+      // Log the first person for debugging
+      console.log("First person in import:", importedPeople[0]);
+      
+      dispatch(replaceAllPeople(importedPeople));
+      console.log("GEDCOM import successful");
+
     } catch (err) {
-      console.error("Error importing GEDCOM:", err);
+      console.error("Detailed import error:", err);
+      alert(`Error importing GEDCOM file: ${err.message}\nCheck console for details.`);
     }
   };
 
@@ -186,7 +205,6 @@ function App() {
           onUpdatePeople={handleUpdatePeople}  // Use the new handler
           selectedId={selectedPersonId}
           onEditPerson={handlePersonSelect}  // Just select, don't center
-          onSetCenter={(id) => dispatch(setCenterId(id))}  // Separate center action
           style={{
             height: '300px',
             width: '100%'

@@ -80,6 +80,9 @@ export default function GenealogyChart({
   const DEFAULT_STROKE_WIDTH = 1;
   const DEFAULT_STROKE_COLOR = '#333';
 
+  // Move buildAncestorArray to component scope so it's accessible everywhere
+  const [ancestorArray, setAncestorArray] = useState([]);
+
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -321,9 +324,31 @@ function getInnerRadius(generation) {
     return ancestors;
   };
 
+  // Add handler for empty segment clicks
+  const handleEmptySegmentClick = (event, generation, position) => {
+    event.stopPropagation();
+    
+    const parentPosition = Math.floor(position / 2);
+    const parentGeneration = generation - 1;
+    const parentId = ancestorArray[parentGeneration]?.[parentPosition];
+    
+    const newPerson = {
+      id: `p${Date.now()}`,
+      firstName: '',
+      lastName: '',
+      birthDate: '',
+      deathDate: '',
+      parents: parentId ? [parentId] : []
+    };
+    
+    onUpdatePeople(prev => [...prev, newPerson]);
+    onSelectPerson(newPerson.id);
+  };
+
   function drawChart() {
     if (!gRef.current) return;
     const ancestors = buildAncestorArray();
+    setAncestorArray(ancestors); // Store ancestors in state
 
     // Use d3.select on the DOM node reference
     const zoomGroup = d3.select(gRef.current);
@@ -442,10 +467,16 @@ function getInnerRadius(generation) {
         const segmentGroup = chartGroup.append("g");
 
         if (!personId) {
-          segmentGroup.append("path")
+          // Simplify empty segment handling - just the clickable path
+          chartGroup.append("g")
+            .append("path")
             .attr("d", arcGenerator)
             .attr("fill", "#eee")
-            .attr("stroke", "#ccc");
+            .attr("stroke", "#ccc")
+            .attr("cursor", "pointer")
+            .style("pointer-events", "all")
+            .on("click", (event) => handleEmptySegmentClick(event, i, k));
+
           continue;
         }
 

@@ -1,20 +1,26 @@
 import React, { useRef, useEffect, useState } from "react";
 import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
-import '../styles/PeopleTable.css';  // Add this import
+import '../styles/PeopleTable.css';
 
-export default function PeopleTable({ 
-  people, 
-  onSetCenter, 
-  onUpdatePeople,
-  selectedId,
-  style = {},
-  onEditPerson
-}) {
+export default function PeopleTable({ people = [], onSetCenter, onUpdatePeople, selectedId, style = {}, onEditPerson }) {
+  // Declare all hooks at the top level
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'asc'
   });
+  const tableRef = useRef(null);
 
+  // Effect for scrolling to selected row
+  useEffect(() => {
+    if (selectedId && tableRef.current) {
+      const selectedRow = tableRef.current.querySelector(`[data-person-id="${selectedId}"]`);
+      if (selectedRow) {
+        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [selectedId]);
+
+  // Memoized sorting logic
   const sortedPeople = React.useMemo(() => {
     if (!sortConfig.key) return people;
 
@@ -33,6 +39,13 @@ export default function PeopleTable({
         : bVal.localeCompare(aVal);
     });
   }, [people, sortConfig]);
+
+  const handleChange = (person, field, value) => {
+    const updatedPerson = { ...person, [field]: value };
+    onUpdatePeople((prev) => 
+      prev.map((p) => p.id === person.id ? updatedPerson : p)
+    );
+  };
 
   const requestSort = (key) => {
     setSortConfig(current => ({
@@ -73,28 +86,23 @@ export default function PeopleTable({
     </th>
   );
 
+  // Render empty state after all hooks
   if (!people || people.length === 0) {
-    return <div>No people loaded.</div>;
+    return (
+      <div style={{ 
+        padding: '20px', 
+        textAlign: 'center',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        ...style
+      }}>
+        No people loaded.
+      </div>
+    );
   }
 
-  const handleChange = (person, field, value) => {
-    const updatedPerson = { ...person, [field]: value };
-    onUpdatePeople((prev) => 
-      prev.map((p) => p.id === person.id ? updatedPerson : p)
-    );
-  };
-
-  const tableRef = useRef(null);
-
-  useEffect(() => {
-    if (selectedId && tableRef.current) {
-      const selectedRow = tableRef.current.querySelector(`[data-person-id="${selectedId}"]`);
-      if (selectedRow) {
-        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [selectedId]);
-
+  // Main render
   return (
     <div 
       ref={tableRef}
