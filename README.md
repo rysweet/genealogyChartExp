@@ -2,7 +2,7 @@
 
 An interactive genealogy visualization tool built with React and D3.js that displays family relationships in a circular chart format.
 
-![Genealogy Chart Screenshot](chart-screenshot.png)
+![Genealogy Chart Screenshot](screenshot.png)
 
 ## Features
 
