@@ -96,6 +96,10 @@ function App() {
     dispatch(setMaxGenerations(Math.min(maxGenerations + 1, 8)));  // Limit to 8 generations
   };
 
+  const removeGeneration = () => {
+    dispatch(setMaxGenerations(Math.max(maxGenerations - 1, 1)));  // Don't go below 1 generation
+  };
+
   const handlePersonSelect = (personId) => {
     dispatch(setSelectedPerson(personId));
     // Removed the setCenterId dispatch
@@ -126,6 +130,7 @@ function App() {
         onImportGedcom={handleImportGedcom}
         onExportGedcom={handleExportGedcom}
         onAddGeneration={addGeneration}
+        onRemoveGeneration={removeGeneration}
         onSaveData={handleSaveData}
         onLoadData={handleLoadData}
         onResetZoom={() => resetZoom()}

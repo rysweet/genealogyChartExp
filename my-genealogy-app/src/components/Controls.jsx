@@ -7,7 +7,8 @@ import {
   FaFileExport,
   FaPlus,
   FaCompress,
-  FaSearch
+  FaSearch,
+  FaMinus
 } from 'react-icons/fa';
 import SearchDropdown from './SearchDropdown';
 
@@ -19,7 +20,8 @@ export default function Controls({
   onLoadData,
   onResetZoom,
   people,
-  onSelectPerson
+  onSelectPerson,
+  onRemoveGeneration
 }) {
   // Hidden file input for GEDCOM import
   const fileInputRef = React.useRef();
@@ -105,6 +107,14 @@ export default function Controls({
         style={{ padding: '8px' }}
       >
         <FaPlus size={20} />
+      </button>
+
+      <button
+        onClick={onRemoveGeneration}
+        title="Remove Generation"
+        style={{ padding: '8px' }}
+      >
+        <FaMinus size={20} />
       </button>
 
       <button
