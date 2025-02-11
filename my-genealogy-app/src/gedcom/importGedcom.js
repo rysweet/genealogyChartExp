@@ -1,32 +1,48 @@
 export async function importGedcomFile(file) {
   const text = await file.text();
-  console.log("Raw file content:", text.substring(0, 200) + "..."); // Show first 200 chars
-  
   const peopleById = {};
   const familiesById = {};
   let currentRecord = null;
   let currentType = null;
-  
-  // Fix the line splitting - remove escaped characters
-  const lines = text.split(/\r?\n/);
-  console.log("Number of lines split:", lines.length);
+  const lines = text.split(/\\r?\\n/);
 
   function finishRecord() {
     if (!currentRecord || !currentType) return;
     if (currentType === "INDI") {
-      console.log("Parsed individual:", currentRecord);
       peopleById[currentRecord.id] = currentRecord;
     } else if (currentType === "FAM") {
-      console.log("Parsed family:", currentRecord);
       familiesById[currentRecord.id] = currentRecord;
     }
     currentRecord = null;
     currentType = null;
   }
 
-  // First pass: Create all people
-  lines.forEach((line, index) => {
-    console.log(`Line ${index}:`, line);
+  function initializeNewRecord(id, type) {
+    if (type === "INDI") {
+      return {
+        id,
+        gedcomId: id,
+        firstName: "",
+        lastName: "",
+        birthDate: "",
+        birthPlace: "",
+        deathDate: "",
+        deathPlace: "",
+        occupation: "",
+        parents: [],
+        spouses: [],
+        siblings: [],
+        notes: "",
+        sex: "",
+        sources: []
+      };
+    }
+    if (type === "FAM") {
+      return { id, husb: null, wife: null, children: [] };
+    }
+  }
+
+  lines.forEach((line) => {
     const parts = line.trim().split(" ");
     if (parts.length < 2) return;
     const level = parts[0];
@@ -35,25 +51,11 @@ export async function importGedcomFile(file) {
     if (level === "0" && tagOrId.startsWith("@") && parts.length >= 3) {
       const recordType = parts[2];
       finishRecord();
-      const cleanedId = tagOrId.replace(/^@|@$/g, "");
       if (recordType === "INDI") {
-        currentRecord = { 
-          id: cleanedId, 
-          firstName: "", 
-          lastName: "", 
-          birthDate: "", 
-          deathDate: "", 
-          parents: [],
-          families: [] // Track which families this person belongs to
-        };
+        currentRecord = initializeNewRecord(tagOrId, "INDI");
         currentType = "INDI";
       } else if (recordType === "FAM") {
-        currentRecord = { 
-          id: cleanedId, 
-          husb: null, 
-          wife: null, 
-          children: [] 
-        };
+        currentRecord = initializeNewRecord(tagOrId, "FAM");
         currentType = "FAM";
       }
     } else if (currentType === "INDI") {
@@ -85,34 +87,50 @@ export async function importGedcomFile(file) {
             currentRecord.deathDate = rest.replace("DATE", "").trim();
           }
         }
+      } else if (rest.startsWith("PLAC")) {
+        if (line.includes("BIRT")) {
+          currentRecord.birthPlace = rest.replace("PLAC", "").trim();
+        } else if (line.includes("DEAT")) {
+          currentRecord.deathPlace = rest.replace("PLAC", "").trim();
+        }
+      } else if (rest.startsWith("SEX")) {
+        currentRecord.sex = rest.replace("SEX", "").trim();
+      } else if (rest.startsWith("OCCU")) {
+        currentRecord.occupation = rest.replace("OCCU", "").trim();
+      } else if (rest.startsWith("NOTE")) {
+        currentRecord.notes += rest.replace("NOTE", "").trim() + "\n";
+      } else if (rest.startsWith("SOUR")) {
+        currentRecord.sources.push(rest.replace("SOUR", "").trim());
       }
     } else if (currentType === "FAM") {
       const rest = line.trim().substring(2).trim();
-      if (rest.startsWith("HUSB") || rest.startsWith("WIFE") || rest.startsWith("CHIL")) {
+      if (rest.startsWith("HUSB")) {
         const tokens = rest.split(" ");
-        const refId = tokens[1] ? tokens[1].replace(/^@|@$/g, "") : null;
-        if (rest.startsWith("HUSB")) currentRecord.husb = refId;
-        else if (rest.startsWith("WIFE")) currentRecord.wife = refId;
-        else if (rest.startsWith("CHIL")) currentRecord.children.push(refId);
+        if (tokens.length >= 2) {
+          currentRecord.husb = tokens[1];
+        }
+      } else if (rest.startsWith("WIFE")) {
+        const tokens = rest.split(" ");
+        if (tokens.length >= 2) {
+          currentRecord.wife = tokens[1];
+        }
+      } else if (rest.startsWith("CHIL")) {
+        const tokens = rest.split(" ");
+        if (tokens.length >= 2) {
+          currentRecord.children.push(tokens[1]);
+        }
+      } else if (rest.startsWith("MARR")) {
+        currentRecord.marriageDate = "";
+        currentRecord.marriagePlace = "";
+      } else if (rest.startsWith("DIV")) {
+        currentRecord.divorceDate = "";
       }
     }
   });
   finishRecord();
-
-  // Second pass: Establish all relationships
   Object.values(familiesById).forEach((fam) => {
     const father = fam.husb;
     const mother = fam.wife;
-
-    // Add family reference to parents
-    if (father && peopleById[father]) {
-      peopleById[father].families.push(fam.id);
-    }
-    if (mother && peopleById[mother]) {
-      peopleById[mother].families.push(fam.id);
-    }
-
-    // Add parents to children
     fam.children.forEach((childId) => {
       if (peopleById[childId]) {
         peopleById[childId].parents = [];
@@ -122,6 +140,30 @@ export async function importGedcomFile(file) {
     });
   });
 
-  console.log("People with relationships:", peopleById);
+  Object.values(familiesById).forEach((fam) => {
+    if (fam.husb && fam.wife) {
+      const marriage = {
+        spouseId: fam.wife,
+        marriageDate: fam.marriageDate,
+        marriagePlace: fam.marriagePlace,
+        divorceDate: fam.divorceDate
+      };
+      if (peopleById[fam.husb]) {
+        peopleById[fam.husb].spouses.push(marriage);
+      }
+      if (peopleById[fam.wife]) {
+        peopleById[fam.wife].spouses.push({
+          ...marriage,
+          spouseId: fam.husb
+        });
+      }
+    }
+    fam.children.forEach((childId) => {
+      if (peopleById[childId]) {
+        peopleById[childId].siblings = fam.children.filter(id => id !== childId);
+      }
+    });
+  });
+
   return Object.values(peopleById);
 }

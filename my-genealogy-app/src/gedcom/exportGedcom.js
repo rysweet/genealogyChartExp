@@ -1,58 +1,61 @@
 export function exportGedcom(people) {
   let gedcomText = "0 HEAD\n1 CHAR UTF-8\n1 GEDC\n2 VERS 7.0\n";
-  
-  // First pass: Export all INDI records
-  people.forEach(person => {
-    gedcomText += `0 @${person.id}@ INDI\n`;
+  const families = new Map();
+
+  // First pass: Generate individual records and collect family relationships
+  people.forEach((person, index) => {
+    const id = `@I${index + 1}@`;
+    gedcomText += `0 ${id} INDI\n`;
     gedcomText += `1 NAME ${person.firstName || ""} /${person.lastName || ""}/\n`;
-    if (person.birthDate) {
-      gedcomText += "1 BIRT\n2 DATE " + person.birthDate + "\n";
+    
+    if (person.sex) gedcomText += `1 SEX ${person.sex}\n`;
+    
+    if (person.birthDate || person.birthPlace) {
+      gedcomText += "1 BIRT\n";
+      if (person.birthDate) gedcomText += `2 DATE ${person.birthDate}\n`;
+      if (person.birthPlace) gedcomText += `2 PLAC ${person.birthPlace}\n`;
     }
-    if (person.deathDate) {
-      gedcomText += "1 DEAT\n2 DATE " + person.deathDate + "\n";
+
+    if (person.deathDate || person.deathPlace) {
+      gedcomText += "1 DEAT\n";
+      if (person.deathDate) gedcomText += `2 DATE ${person.deathDate}\n`;
+      if (person.deathPlace) gedcomText += `2 PLAC ${person.deathPlace}\n`;
     }
-    // Add FAMC (family where person is a child) references
-    if (person.parents && person.parents.length > 0) {
-      const famId = `F${person.parents.sort().join('_')}`;
-      gedcomText += `1 FAMC @${famId}@\n`;
-    }
-    // Add FAMS (family where person is a spouse) references
-    if (person.families) {
-      person.families.forEach(famId => {
-        gedcomText += `1 FAMS @${famId}@\n`;
+
+    if (person.occupation) gedcomText += `1 OCCU ${person.occupation}\n`;
+    
+    person.sources.forEach(source => {
+      gedcomText += `1 SOUR ${source}\n`;
+    });
+
+    if (person.notes) gedcomText += `1 NOTE ${person.notes}\n`;
+
+    // Collect family relationships
+    person.spouses.forEach(marriage => {
+      const famId = `F${index}_${marriage.spouseId}`;
+      families.set(famId, {
+        husband: person.sex === 'F' ? marriage.spouseId : person.id,
+        wife: person.sex === 'F' ? person.id : marriage.spouseId,
+        marriageDate: marriage.marriageDate,
+        marriagePlace: marriage.marriagePlace,
+        divorceDate: marriage.divorceDate
       });
-    }
+    });
   });
 
-  // Second pass: Export FAM records
-  const processedFamilies = new Set();
-  
-  people.forEach(person => {
-    if (person.parents && person.parents.length > 0) {
-      const familyId = `F${person.parents.sort().join('_')}`;
-      
-      if (!processedFamilies.has(familyId)) {
-        processedFamilies.add(familyId);
-        
-        gedcomText += `0 @${familyId}@ FAM\n`;
-        // Add husband reference
-        if (person.parents[0]) {
-          gedcomText += `1 HUSB @${person.parents[0]}@\n`;
-        }
-        // Add wife reference
-        if (person.parents[1]) {
-          gedcomText += `1 WIFE @${person.parents[1]}@\n`;
-        }
-        
-        // Add all children
-        people.forEach(potentialChild => {
-          if (potentialChild.parents &&
-              potentialChild.parents.length === person.parents.length &&
-              potentialChild.parents.every(p => person.parents.includes(p))) {
-            gedcomText += `1 CHIL @${potentialChild.id}@\n`;
-          }
-        });
-      }
+  // Second pass: Generate family records
+  families.forEach((fam, famId) => {
+    gedcomText += `0 @${famId}@ FAM\n`;
+    if (fam.husband) gedcomText += `1 HUSB @${fam.husband}@\n`;
+    if (fam.wife) gedcomText += `1 WIFE @${fam.wife}@\n`;
+    if (fam.marriageDate || fam.marriagePlace) {
+      gedcomText += "1 MARR\n";
+      if (fam.marriageDate) gedcomText += `2 DATE ${fam.marriageDate}\n`;
+      if (fam.marriagePlace) gedcomText += `2 PLAC ${fam.marriagePlace}\n`;
+    }
+    if (fam.divorceDate) {
+      gedcomText += "1 DIV\n";
+      gedcomText += `2 DATE ${fam.divorceDate}\n`;
     }
   });
 
