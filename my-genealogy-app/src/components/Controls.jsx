@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   FaSave, 
   FaUpload, 
@@ -6,8 +6,10 @@ import {
   FaFileImport, 
   FaFileExport,
   FaPlus,
-  FaCompress
+  FaCompress,
+  FaSearch
 } from 'react-icons/fa';
+import SearchDropdown from './SearchDropdown';
 
 export default function Controls({ 
   onImportGedcom, 
@@ -15,10 +17,27 @@ export default function Controls({
   onAddGeneration, 
   onSaveData, 
   onLoadData,
-  onResetZoom 
+  onResetZoom,
+  people,
+  onSelectPerson
 }) {
   // Hidden file input for GEDCOM import
   const fileInputRef = React.useRef();
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const searchResults = searchTerm ? people.filter(person => 
+    person.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.birthDate?.includes(searchTerm) ||
+    person.deathDate?.includes(searchTerm)
+  ) : [];
+
+  const handleSearchSelect = (person) => {
+    onSelectPerson(person.id);
+    setSearchTerm('');
+    setShowSearch(false);
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -95,6 +114,50 @@ export default function Controls({
       >
         <FaCompress size={20} />
       </button>
+
+      <div style={{ width: '1px', backgroundColor: '#ddd', margin: '0 5px' }} />
+
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          title="Search"
+          className="controls-button"
+        >
+          <FaSearch size={20} />
+        </button>
+
+        {showSearch && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: '5px',
+            zIndex: 1000,
+            minWidth: '250px'
+          }}>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search people..."
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                marginBottom: searchResults.length ? '5px' : 0
+              }}
+              autoFocus
+            />
+            {searchResults.length > 0 && (
+              <SearchDropdown 
+                results={searchResults}
+                onSelect={handleSearchSelect}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

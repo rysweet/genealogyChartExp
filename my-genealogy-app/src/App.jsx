@@ -129,6 +129,14 @@ function App() {
         onSaveData={handleSaveData}
         onLoadData={handleLoadData}
         onResetZoom={() => resetZoom()}
+        people={people}
+        onSelectPerson={(id) => {
+          dispatch(setSelectedPerson(id));
+          const element = document.querySelector(`[data-person-id="${id}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }}
       />
       <div style={{
         width: '800px',  // Same as chart's default width
