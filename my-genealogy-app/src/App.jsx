@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import sampleData from "./data/sampleData.json";
 import Controls from "./components/Controls";
 import GenealogyChart from "./components/GenealogyChart";
@@ -7,23 +7,36 @@ import { exportGedcom } from "./gedcom/exportGedcom";
 import PeopleTable from "./components/PeopleTable";
 import { JsonFilePersistence } from "./persistence/JsonFilePersistence";
 import { LocalStoragePersistence } from "./persistence/LocalStoragePersistence";
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  setPeople,
+  setMaxGenerations,
+  setCenterId,
+  setSelectedPerson,
+  setColorOverride,
+  updatePerson
+} from './store/genealogySlice';
 
 function App() {
-  const [maxGenerations, setMaxGenerations] = useState(8);  // Changed default to 8
-  const [people, setPeople] = useState([]);
-  const [centerId, setCenterId] = useState("g0_1");
-  const [persistence] = useState(() => new JsonFilePersistence());
-  const [resetZoom, setResetZoom] = useState(() => () => {});
-  const [colorOverrides, setColorOverrides] = useState({});
-  const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const dispatch = useDispatch();
+  const [resetZoom, setResetZoom] = useState(() => () => {});  // Add this back
+  const [persistence] = useState(() => new JsonFilePersistence());  // Add this back
+  
+  const {
+    people,
+    maxGenerations,
+    centerId,
+    selectedPersonId,
+    colorOverrides
+  } = useSelector(state => state.genealogy);
 
   // Load sample data by default
   useEffect(() => {
-    setPeople(sampleData);
+    dispatch(setPeople(sampleData));
     if (sampleData.length > 0) {
-      setCenterId(sampleData[0].id);
+      dispatch(setCenterId(sampleData[0].id));
     }
-  }, []);
+  }, [dispatch]);
 
   const handleImportGedcom = async (file) => {
     try {
@@ -31,9 +44,9 @@ function App() {
       console.log("Imported people:", importedPeople);
       if (importedPeople.length > 0) {
         const importedCenterId = importedPeople[0].id;
-        setCenterId(importedCenterId);
+        dispatch(setCenterId(importedCenterId));
       }
-      setPeople(importedPeople);
+      dispatch(setPeople(importedPeople));
     } catch (err) {
       console.error("Error importing GEDCOM:", err);
     }
@@ -67,29 +80,35 @@ function App() {
   const handleLoadData = async () => {
     const loadedData = await persistence.load();
     if (loadedData) {
-      setPeople(loadedData.people || []);
-      setColorOverrides(loadedData.colors || {});
+      dispatch(setPeople(loadedData.people || []));
+      dispatch(setColorOverride(loadedData.colors || {}));
       if (loadedData.people?.length > 0) {
-        setCenterId(loadedData.people[0].id);
+        dispatch(setCenterId(loadedData.people[0].id));
       }
     }
   };
 
   const handleColorChange = (personId, newColor) => {
-    setColorOverrides(prev => ({
-      ...prev,
-      [personId]: newColor
-    }));
+    dispatch(setColorOverride({ id: personId, color: newColor }));
   };
 
   const addGeneration = () => {
-    setMaxGenerations((prev) => Math.min(prev + 1, 8));  // Limit to 8 generations
+    dispatch(setMaxGenerations(Math.min(maxGenerations + 1, 8)));  // Limit to 8 generations
   };
 
   const handlePersonSelect = (personId) => {
-    setSelectedPersonId(personId);  // Update selected person
-    if (personId) {  // Only update center if we're selecting someone
-      setCenterId(personId);
+    dispatch(setSelectedPerson(personId));
+    // Removed the setCenterId dispatch
+  };
+
+  const handleUpdatePeople = (updatedPeople) => {
+    if (typeof updatedPeople === 'function') {
+      // Handle functional updates
+      dispatch(setPeople(updatedPeople(people)));
+    } else if (Array.isArray(updatedPeople)) {
+      dispatch(setPeople(updatedPeople));
+    } else {
+      dispatch(updatePerson(updatedPeople));
     }
   };
 
@@ -123,8 +142,8 @@ function App() {
           people={people}
           maxGenerations={maxGenerations}
           centerPersonId={centerId}
-          onUpdatePeople={setPeople}
-          onSetCenter={setCenterId}
+          onUpdatePeople={handleUpdatePeople}  // Use the new handler
+          onSetCenter={(id) => dispatch(setCenterId(id))}
           onResetZoom={setResetZoom}
           colorOverrides={colorOverrides}
           onColorChange={handleColorChange}
@@ -137,10 +156,11 @@ function App() {
         />
         <PeopleTable
           people={people}
-          onSetCenter={setCenterId}
-          onUpdatePeople={setPeople}
+          onSetCenter={(id) => dispatch(setCenterId(id))}
+          onUpdatePeople={handleUpdatePeople}  // Use the new handler
           selectedId={selectedPersonId}
-          onEditPerson={handlePersonSelect}  // Use same handler
+          onEditPerson={handlePersonSelect}  // Just select, don't center
+          onSetCenter={(id) => dispatch(setCenterId(id))}  // Separate center action
           style={{
             height: '300px',
             width: '100%'
