@@ -21,32 +21,24 @@ function createColorScale(maxGenerations) {
 }
 
 function getTextColorForBackground(backgroundColor) {
-  let r, g, b;
-  
-  if (backgroundColor.startsWith('#')) {
-    // Handle hex format
-    r = parseInt(backgroundColor.slice(1, 3), 16);
-    g = parseInt(backgroundColor.slice(3, 5), 16);
-    b = parseInt(backgroundColor.slice(5, 7), 16);
-  } else if (backgroundColor.startsWith('rgb')) {
-    // Handle rgb format
-    const matches = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-    if (matches) {
-      [, r, g, b] = matches.map(Number);
-    } else {
-      console.error('Invalid RGB format:', backgroundColor);
-      return '#ffffff';
-    }
-  } else {
-    console.error('Unsupported color format:', backgroundColor);
-    return '#ffffff';
+  // Convert any color format to RGB values
+  let color = d3.color(backgroundColor);
+  if (!color) {
+    console.error('Invalid color format:', backgroundColor);
+    return '#000000';
   }
+
+  // Calculate relative luminance using WCAG formula
+  // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+  const rgb = [color.r, color.g, color.b].map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
   
-  // Calculate brightness using W3C formula
-  const brightness = Math.round(((r * 299) + (g * 587) + (b * 114)) / 1000);
-  console.log(`RGB: ${r},${g},${b}, Brightness: ${brightness}`);
+  const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
   
-  return brightness > 125 ? "#003300" : "#ffffff";
+  // Use WCAG contrast ratio threshold
+  return luminance > 0.5 ? '#000000' : '#ffffff';
 }
 
 function calculateDescendantColor(baseColor, generation, totalGenerations) {
@@ -403,10 +395,13 @@ function getInnerRadius(generation) {
           continue;
         }
 
+        const segmentColor = personId ? getColorForPerson(personId, i) : "#eee";
+        const textColor = getTextColorForBackground(segmentColor);
+
         // Add clickable arc with improved handling
         segmentGroup.append("path")
           .attr("d", arcGenerator)
-          .attr("fill", personId ? getColorForPerson(personId, i) : "#eee")
+          .attr("fill", segmentColor)
           .attr("stroke", "#333")
           .attr("cursor", "pointer")
           .style("pointer-events", "all")
@@ -443,7 +438,7 @@ function getInnerRadius(generation) {
           const lineArcLength = angleDiff * lineRadius;
           segmentGroup.append("text")
             .style("font-size", DEFAULT_FONT_SIZE + "px")
-            .style("fill", getTextColorForBackground(arcFillColor))
+            .style("fill", textColor)
             .style("pointer-events", "none") // Make text non-blocking
             .append("textPath")
             .attr("xlink:href", "#" + textPathId)
