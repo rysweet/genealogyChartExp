@@ -61,8 +61,8 @@ export default function GenealogyChart({
   colorOverrides = {},  // New prop for custom colors
   onColorChange,        // New prop for handling color changes
   onSelectPerson,  // Add this prop
+  selectedPersonId,  // Add this prop
 }) {
-  const [selectedPersonId, setSelectedPersonId] = useState(null);
   const svgRef = useRef(null);
   const gRef = useRef(null);
   const zoomRef = useRef(null);  // Create zoom function reference
@@ -260,8 +260,7 @@ function getInnerRadius(generation) {
   // Updated segment click handler to clear tooltip
   const handleSegmentClick = (event, personId) => {
     event.stopPropagation();
-    setSelectedPersonId(personId);
-    onSelectPerson(personId);  // Add this line
+    onSelectPerson(personId);  // Just call the handler, don't manage state locally
     setTooltip({ person: null, position: { x: 0, y: 0 } });
   };
 
@@ -291,7 +290,6 @@ function getInnerRadius(generation) {
   // Add center click handler
   const handleCenterClick = (event) => {
     event.stopPropagation();
-    setSelectedPersonId(centerPersonId);
     onSelectPerson(centerPersonId);  // Add this line
     setTooltip({ person: null, position: { x: 0, y: 0 } });
   };
@@ -589,9 +587,9 @@ function getInnerRadius(generation) {
   return (
     <div className="genealogy-container" style={{ position: "relative" }}>
       <svg ref={svgRef}></svg>
-      {selectedPerson && (
+      {selectedPersonId && (  // Use prop instead of local state
         <PersonEditForm
-          person={selectedPerson}
+          person={people.find(p => p.id === selectedPersonId)}
           backgroundColor={getSelectedSegmentColor(selectedPersonId)}
           onColorChange={handleColorChange}
           onSave={(updatedPerson, isNew) => {
@@ -602,11 +600,8 @@ function getInnerRadius(generation) {
               return prev.map(p => p.id === updatedPerson.id ? updatedPerson : p);
             });
           }}
-          onClose={() => setSelectedPersonId(null)}
-          onSetCenter={(id) => {
-            onSetCenter(id);
-            setSelectedPersonId(null);
-          }}
+          onClose={() => onSelectPerson(null)}  // Clear selection through prop
+          onSetCenter={onSetCenter}
           allPeople={people}
         />
       )}

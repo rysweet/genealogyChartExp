@@ -1,11 +1,13 @@
 import React, { useRef, useEffect } from "react";
+// Remove FaEdit import
 
 export default function PeopleTable({ 
   people, 
   onSetCenter, 
   onUpdatePeople,
   selectedId,
-  style = {}  // Add style prop
+  style = {},
+  onEditPerson  // Add this new prop
 }) {
   if (!people || people.length === 0) {
     return <div>No people loaded.</div>;
@@ -74,9 +76,17 @@ export default function PeopleTable({
                   backgroundColor: person.id === selectedId ? '#fff3e0' : 'inherit',
                   transition: 'background-color 0.3s'
                 }}
-                onClick={() => onSetCenter(person.id)}
+                onClick={(e) => {
+                  onSetCenter(person.id);
+                  onEditPerson(person.id);  // Add this line to show edit form when row is clicked
+                }}
               >
-                <td style={{ border: "1px solid #ccc", padding: "5px" }}>{person.id}</td>
+                <td style={{ 
+                  border: "1px solid #ccc", 
+                  padding: "5px"
+                }}>
+                  {person.id}
+                </td>
                 <td style={{ border: "1px solid #ccc", padding: "5px" }}>
                   <input
                     value={person.firstName || ""}

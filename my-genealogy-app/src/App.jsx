@@ -86,6 +86,13 @@ function App() {
     setMaxGenerations((prev) => Math.min(prev + 1, 8));  // Limit to 8 generations
   };
 
+  const handlePersonSelect = (personId) => {
+    setSelectedPersonId(personId);  // Update selected person
+    if (personId) {  // Only update center if we're selecting someone
+      setCenterId(personId);
+    }
+  };
+
   return (
     <div style={{ 
       minHeight: '100vh',
@@ -121,7 +128,8 @@ function App() {
           onResetZoom={setResetZoom}
           colorOverrides={colorOverrides}
           onColorChange={handleColorChange}
-          onSelectPerson={setSelectedPersonId}
+          onSelectPerson={handlePersonSelect}  // Use unified handler
+          selectedPersonId={selectedPersonId}  // Pass selectedPersonId as prop
           style={{
             height: '600px',
             width: '100%'
@@ -129,9 +137,10 @@ function App() {
         />
         <PeopleTable
           people={people}
-          onSetCenter={(personId) => setCenterId(personId)}
+          onSetCenter={setCenterId}
           onUpdatePeople={setPeople}
           selectedId={selectedPersonId}
+          onEditPerson={handlePersonSelect}  // Use same handler
           style={{
             height: '300px',
             width: '100%'
