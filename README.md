@@ -26,12 +26,14 @@ An interactive genealogy visualization tool built with React and D3.js that disp
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/rysweet/genealogyChartExp.git
 cd genealogyChartExp/my_genealogy_app
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 # or
@@ -39,6 +41,7 @@ yarn install
 ```
 
 3. Start the development server:
+
 ```bash
 npm start
 # or
