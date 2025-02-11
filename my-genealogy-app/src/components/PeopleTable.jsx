@@ -33,70 +33,85 @@ export default function PeopleTable({
     <div 
       ref={tableRef}
       style={{ 
-        maxHeight: '300px', 
-        overflowY: 'auto', 
-        marginTop: '20px' 
+        position: 'relative',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'white',  // Ensure table has a solid background
+        zIndex: 0  // Ensure table stays in its own stacking context
       }}
     >
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th style={{ border: "1px solid #ccc", padding: "5px" }}>ID</th>
-            <th style={{ border: "1px solid #ccc", padding: "5px" }}>First Name</th>
-            <th style={{ border: "1px solid #ccc", padding: "5px" }}>Last Name</th>
-            <th style={{ border: "1px solid #ccc", padding: "5px" }}>Birth Date</th>
-            <th style={{ border: "1px solid #ccc", padding: "5px" }}>Death Date</th>
-            <th style={{ border: "1px solid #ccc", padding: "5px" }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {people.map((person) => (
-            <tr 
-              key={person.id}
-              data-person-id={person.id}
-              style={{
-                cursor: 'pointer',
-                backgroundColor: person.id === selectedId ? '#fff3e0' : 'inherit',
-                transition: 'background-color 0.3s'
-              }}
-              onClick={() => onSetCenter(person.id)}
-            >
-              <td style={{ border: "1px solid #ccc", padding: "5px" }}>{person.id}</td>
-              <td style={{ border: "1px solid #ccc", padding: "5px" }}>
-                <input
-                  value={person.firstName || ""}
-                  onChange={(e) => handleChange(person, "firstName", e.target.value)}
-                  style={{ width: "100%", border: "none" }}
-                />
-              </td>
-              <td style={{ border: "1px solid #ccc", padding: "5px" }}>
-                <input
-                  value={person.lastName || ""}
-                  onChange={(e) => handleChange(person, "lastName", e.target.value)}
-                  style={{ width: "100%", border: "none" }}
-                />
-              </td>
-              <td style={{ border: "1px solid #ccc", padding: "5px" }}>
-                <input
-                  value={person.birthDate || ""}
-                  onChange={(e) => handleChange(person, "birthDate", e.target.value)}
-                  style={{ width: "100%", border: "none" }}
-                />
-              </td>
-              <td style={{ border: "1px solid #ccc", padding: "5px" }}>
-                <input
-                  value={person.deathDate || ""}
-                  onChange={(e) => handleChange(person, "deathDate", e.target.value)}
-                  style={{ width: "100%", border: "none" }}
-                />
-              </td>
-              <td style={{ border: "1px solid #ccc", padding: "5px" }}>
-                <button onClick={() => onSetCenter(person.id)}>Set Center</button>
-              </td>
+      <div style={{ 
+        flex: 1, 
+        overflowY: 'auto',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        backgroundColor: 'white'  // Ensure table has solid background
+      }}>
+        <table style={{ 
+          width: '100%', 
+          borderCollapse: 'collapse',
+          tableLayout: 'fixed'  // Add this for better column sizing
+        }}>
+          <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+            <tr>
+              <th style={{ border: "1px solid #ccc", padding: "5px" }}>ID</th>
+              <th style={{ border: "1px solid #ccc", padding: "5px" }}>First Name</th>
+              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Last Name</th>
+              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Birth Date</th>
+              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Death Date</th>
+              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {people.map((person) => (
+              <tr 
+                key={person.id}
+                data-person-id={person.id}
+                style={{
+                  cursor: 'pointer',
+                  backgroundColor: person.id === selectedId ? '#fff3e0' : 'inherit',
+                  transition: 'background-color 0.3s'
+                }}
+                onClick={() => onSetCenter(person.id)}
+              >
+                <td style={{ border: "1px solid #ccc", padding: "5px" }}>{person.id}</td>
+                <td style={{ border: "1px solid #ccc", padding: "5px" }}>
+                  <input
+                    value={person.firstName || ""}
+                    onChange={(e) => handleChange(person, "firstName", e.target.value)}
+                    style={{ width: "100%", border: "none" }}
+                  />
+                </td>
+                <td style={{ border: "1px solid #ccc", padding: "5px" }}>
+                  <input
+                    value={person.lastName || ""}
+                    onChange={(e) => handleChange(person, "lastName", e.target.value)}
+                    style={{ width: "100%", border: "none" }}
+                  />
+                </td>
+                <td style={{ border: "1px solid #ccc", padding: "5px" }}>
+                  <input
+                    value={person.birthDate || ""}
+                    onChange={(e) => handleChange(person, "birthDate", e.target.value)}
+                    style={{ width: "100%", border: "none" }}
+                  />
+                </td>
+                <td style={{ border: "1px solid #ccc", padding: "5px" }}>
+                  <input
+                    value={person.deathDate || ""}
+                    onChange={(e) => handleChange(person, "deathDate", e.target.value)}
+                    style={{ width: "100%", border: "none" }}
+                  />
+                </td>
+                <td style={{ border: "1px solid #ccc", padding: "5px" }}>
+                  <button onClick={() => onSetCenter(person.id)}>Set Center</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

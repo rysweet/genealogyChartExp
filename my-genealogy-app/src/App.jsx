@@ -87,8 +87,18 @@ function App() {
   };
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif" }}>
-      <h1>Genealogy Chart</h1>
+    <div style={{ 
+      fontFamily: "Arial, sans-serif",
+      minHeight: '100vh',  // Changed from height to minHeight
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '20px',
+      gap: '20px',
+      minWidth: '360px',  // Minimum width for mobile
+      boxSizing: 'border-box',
+      overflow: 'hidden'  // Prevent scrolling on main container
+    }}>
+      <h1 style={{ flexShrink: 0 }}>Genealogy Chart</h1>
       <Controls
         onImportGedcom={handleImportGedcom}
         onExportGedcom={handleExportGedcom}
@@ -96,24 +106,50 @@ function App() {
         onSaveData={handleSaveData}
         onLoadData={handleLoadData}
         onResetZoom={() => resetZoom()}
+        style={{ flexShrink: 0 }}
       />
-      <GenealogyChart
-        people={people}
-        maxGenerations={maxGenerations}
-        centerPersonId={centerId}
-        onUpdatePeople={setPeople}
-        onSetCenter={setCenterId}
-        onResetZoom={setResetZoom}
-        colorOverrides={colorOverrides}
-        onColorChange={handleColorChange}
-        onSelectPerson={setSelectedPersonId}  // Add this prop
-      />
-      <PeopleTable
-        people={people}
-        onSetCenter={(personId) => setCenterId(personId)}
-        onUpdatePeople={setPeople}
-        selectedId={selectedPersonId}  // Add this prop
-      />
+      <div style={{
+        position: 'relative',  // Create stacking context
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        flex: 1,
+        width: '100%',
+        maxWidth: '1200px',  // Maximum width for very large screens
+        margin: '0 auto',  // Center content
+        zIndex: 0  // Base stacking context
+      }}>
+        <div style={{ 
+          height: '600px',  // Fixed height for chart
+          position: 'relative',  // Contains the chart
+          zIndex: 1  // Chart above container but below PersonEditForm
+        }}>
+          <GenealogyChart
+            people={people}
+            maxGenerations={maxGenerations}
+            centerPersonId={centerId}
+            onUpdatePeople={setPeople}
+            onSetCenter={setCenterId}
+            onResetZoom={setResetZoom}
+            colorOverrides={colorOverrides}
+            onColorChange={handleColorChange}
+            onSelectPerson={setSelectedPersonId}  // Add this prop
+          />
+        </div>
+        <div style={{ 
+          height: '300px',  // Fixed height for table
+          minHeight: '200px',
+          position: 'relative',
+          zIndex: 0  // Table below chart
+        }}>
+          <PeopleTable
+            people={people}
+            onSetCenter={(personId) => setCenterId(personId)}
+            onUpdatePeople={setPeople}
+            selectedId={selectedPersonId}  // Add this prop
+          />
+        </div>
+      </div>
     </div>
   );
 }
