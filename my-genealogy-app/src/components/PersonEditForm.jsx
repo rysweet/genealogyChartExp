@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ColorPickerButton from "./ColorPickerButton";
 
 export default function PersonEditForm({ 
   person, 
@@ -6,7 +7,9 @@ export default function PersonEditForm({
   onClose, 
   onSetCenter,
   allPeople,  // Add this prop to access all people
-  depth = 0   // Add depth to control nesting
+  depth = 0,   // Add depth to control nesting
+  backgroundColor,
+  onColorChange
 }) {
   const formRef = useRef(null);
   const [showChildren, setShowChildren] = useState(false);
@@ -88,10 +91,22 @@ export default function PersonEditForm({
       }} 
       ref={formRef}
     >
-      <h3>
-        {person.firstName} {person.lastName}
-        {depth > 0 ? ` (Child)` : ''}
-      </h3>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        marginBottom: "15px"
+      }}>
+        <h3 style={{ margin: 0 }}>
+          {person.firstName} {person.lastName}
+          {depth > 0 ? ` (Child)` : ''}
+        </h3>
+        <ColorPickerButton 
+          color={backgroundColor} 
+          onChange={onColorChange}
+        />
+      </div>
+
       <div className="edit-form">
         <div>
           <label>First Name: </label>
@@ -128,6 +143,7 @@ export default function PersonEditForm({
             onChange={(e) => handleParentsChange(e.target.value)}
           />
         </div>
+        
         <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
           <button 
             onClick={handleSetCenter}  // Changed from onSetCenter to handleSetCenter

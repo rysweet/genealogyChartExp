@@ -9,11 +9,12 @@ import { JsonFilePersistence } from "./persistence/JsonFilePersistence";
 import { LocalStoragePersistence } from "./persistence/LocalStoragePersistence";
 
 function App() {
-  const [maxGenerations, setMaxGenerations] = useState(5);
+  const [maxGenerations, setMaxGenerations] = useState(8);  // Changed default to 8
   const [people, setPeople] = useState([]);
   const [centerId, setCenterId] = useState("g0_1");
   const [persistence] = useState(() => new JsonFilePersistence());
   const [resetZoom, setResetZoom] = useState(() => () => {});
+  const [colorOverrides, setColorOverrides] = useState({});
 
   // Load sample data by default
   useEffect(() => {
@@ -50,7 +51,11 @@ function App() {
   };
 
   const handleSaveData = async () => {
-    const success = await persistence.save(people);
+    const dataToSave = {
+      people,
+      colors: colorOverrides
+    };
+    const success = await persistence.save(dataToSave);
     if (success) {
       alert('Data saved successfully!');
     } else {
@@ -61,15 +66,23 @@ function App() {
   const handleLoadData = async () => {
     const loadedData = await persistence.load();
     if (loadedData) {
-      setPeople(loadedData);
-      if (loadedData.length > 0) {
-        setCenterId(loadedData[0].id);
+      setPeople(loadedData.people || []);
+      setColorOverrides(loadedData.colors || {});
+      if (loadedData.people?.length > 0) {
+        setCenterId(loadedData.people[0].id);
       }
     }
   };
 
+  const handleColorChange = (personId, newColor) => {
+    setColorOverrides(prev => ({
+      ...prev,
+      [personId]: newColor
+    }));
+  };
+
   const addGeneration = () => {
-    setMaxGenerations((prev) => prev + 1);
+    setMaxGenerations((prev) => Math.min(prev + 1, 8));  // Limit to 8 generations
   };
 
   return (
@@ -90,6 +103,8 @@ function App() {
         onUpdatePeople={setPeople}
         onSetCenter={setCenterId}
         onResetZoom={setResetZoom}
+        colorOverrides={colorOverrides}
+        onColorChange={handleColorChange}
       />
       <PeopleTable
         people={people}

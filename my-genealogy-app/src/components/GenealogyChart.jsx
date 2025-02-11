@@ -55,7 +55,9 @@ export default function GenealogyChart({
   centerPersonId,
   onUpdatePeople,
   onSetCenter,
-  onResetZoom  // Add this prop
+  onResetZoom,  // Add this prop
+  colorOverrides = {},  // New prop for custom colors
+  onColorChange        // New prop for handling color changes
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const svgRef = useRef(null);
@@ -63,6 +65,9 @@ export default function GenealogyChart({
   const zoomRef = useRef(null);  // Create zoom function reference
   const width = 800;  // Move width/height to component level
   const height = 800;
+
+  // Move colorScale creation to component level
+  const [colorScale] = useState(() => createColorScale(maxGenerations));
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -126,7 +131,7 @@ export default function GenealogyChart({
 
   useEffect(() => {
     drawChart();
-  }, [people, maxGenerations, centerPersonId]);
+  }, [people, maxGenerations, centerPersonId, colorOverrides]);
 
   function approximateTextWidth(str, fontSize = DEFAULT_FONT_SIZE) {
     const avgCharWidth = fontSize * 0.6;
@@ -153,11 +158,10 @@ export default function GenealogyChart({
     return lines;
   }
 
-// Update geometry constants
-const CENTER_RADIUS = 30;
-const BASE_RING_WIDTH = 30;  // Width for second generation
-const RING_WIDTH_INCREMENT = 15;  // Amount to add for each generation
-const ARC_PADDING = 0;
+// Update geometry constants for 8 generations
+const CENTER_RADIUS = 25;  // Slightly smaller center
+const BASE_RING_WIDTH = 25;  // Slightly thinner rings
+const RING_WIDTH_INCREMENT = 10;  // Smaller increment between rings
 
 // Calculate ring width for a given generation
 function getRingWidth(generation) {
@@ -174,6 +178,30 @@ function getInnerRadius(generation) {
   return [...Array(generation - 1)]
     .reduce((sum, _, idx) => sum + getRingWidth(idx + 1), CENTER_RADIUS);
 }
+
+  function getEffectiveGenerations(ancestors) {
+    // Find the highest generation that has any people
+    let effectiveGen = 0;
+    for (let i = 0; i < ancestors.length; i++) {
+      if (ancestors[i].some(pid => pid !== null)) {
+        effectiveGen = i;
+      }
+    }
+    // Return at least maxGenerations or the highest populated generation
+    return Math.max(maxGenerations, effectiveGen + 1);
+  }
+
+  // Helper to get color for a person/generation
+  function getColorForPerson(personId, generation) {
+    if (colorOverrides[personId]) {
+      // Calculate brightened color for descendants
+      const baseColor = d3.color(colorOverrides[personId]);
+      const maxBrightness = 0.9;
+      const brightnessStep = (maxBrightness - 0.3) / maxGenerations;
+      return baseColor.brighter(generation * brightnessStep);
+    }
+    return colorScale(generation);
+  }
 
   function drawChart() {
     if (!gRef.current) return;
@@ -240,7 +268,6 @@ function getInnerRadius(generation) {
       .style("pointer-events", "none")
       .text("−");
 
-    const colorScale = createColorScale(maxGenerations);
     const peopleMap = new Map(people.map((p) => [p.id, p]));
     const ancestors = [];
     for (let i = 0; i < maxGenerations; i++) {
@@ -262,8 +289,15 @@ function getInnerRadius(generation) {
         }
       }
     }
+
+    // Get effective number of generations to display
+    const effectiveGenerations = getEffectiveGenerations(ancestors);
+    
+    // Create color scale using effective generations
+    const colorScale = createColorScale(effectiveGenerations);
+
     const centerPerson = peopleMap.get(centerPersonId);
-    const centerBgColor = colorScale(0);
+    const centerBgColor = colorOverrides[centerPersonId] || colorScale(0);
 
     // Use existing chartGroup instead of creating a new one
     chartGroup.append("circle")
@@ -288,7 +322,7 @@ function getInnerRadius(generation) {
       .style("font-size", DEFAULT_FONT_SIZE + "px")
       .style("fill", getTextColorForBackground(centerBgColor))
       .text(centerPerson ? centerPerson.firstName + " " + centerPerson.lastName : "Unknown");
-    for (let i = 1; i < maxGenerations; i++) {
+    for (let i = 1; i < effectiveGenerations; i++) {
       const genArray = ancestors[i];
       const segmentCount = 2 ** i;
       const arcAngle = (2 * Math.PI) / segmentCount - (ARC_PADDING * Math.PI) / 180;
@@ -320,7 +354,7 @@ function getInnerRadius(generation) {
         // Add clickable arc with improved handling
         segmentGroup.append("path")
           .attr("d", arcGenerator)
-          .attr("fill", arcFillColor)
+          .attr("fill", personId ? getColorForPerson(personId, i) : "#eee")
           .attr("stroke", "#333")
           .attr("cursor", "pointer")
           .style("pointer-events", "all")
@@ -414,12 +448,18 @@ function getInnerRadius(generation) {
 
   const selectedPerson = people.find((p) => p.id === selectedPersonId);
 
+  const handleColorChange = (newColor) => {
+    onColorChange(selectedPersonId, newColor);
+  };
+
   return (
     <div className="genealogy-container" style={{ position: "relative" }}>
       <svg ref={svgRef}></svg>
       {selectedPerson && (
         <PersonEditForm
           person={selectedPerson}
+          backgroundColor={colorOverrides[selectedPersonId] || colorScale(0)}
+          onColorChange={handleColorChange}
           onSave={(updatedPerson, isNew) => {
             onUpdatePeople(prev => {
               if (isNew) {
