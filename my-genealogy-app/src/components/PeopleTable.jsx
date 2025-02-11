@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from "react";
-// Remove FaEdit import
+import React, { useRef, useEffect, useState } from "react";
+import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import '../styles/PeopleTable.css';  // Add this import
 
 export default function PeopleTable({ 
   people, 
@@ -7,8 +8,71 @@ export default function PeopleTable({
   onUpdatePeople,
   selectedId,
   style = {},
-  onEditPerson  // Add this new prop
+  onEditPerson
 }) {
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
+
+  const sortedPeople = React.useMemo(() => {
+    if (!sortConfig.key) return people;
+
+    return [...people].sort((a, b) => {
+      const aVal = a[sortConfig.key] || '';
+      const bVal = b[sortConfig.key] || '';
+      
+      if (sortConfig.key === 'birthDate' || sortConfig.key === 'deathDate') {
+        const aYear = parseInt(aVal) || 0;
+        const bYear = parseInt(bVal) || 0;
+        return sortConfig.direction === 'asc' ? aYear - bYear : bYear - aYear;
+      }
+
+      return sortConfig.direction === 'asc' 
+        ? aVal.localeCompare(bVal)
+        : bVal.localeCompare(aVal);
+    });
+  }, [people, sortConfig]);
+
+  const requestSort = (key) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return <FaSort size={12} style={{ marginLeft: 5, opacity: 0.3 }} />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <FaSortUp size={12} style={{ marginLeft: 5 }} />
+      : <FaSortDown size={12} style={{ marginLeft: 5 }} />;
+  };
+
+  const HeaderCell = ({ label, sortKey, style = {} }) => (
+    <th 
+      style={{ 
+        cursor: 'pointer',
+        userSelect: 'none',
+        padding: '8px',
+        border: "1px solid #ccc",
+        position: 'relative',  // Changed from flex to relative positioning
+        whiteSpace: 'nowrap'   // Prevent text wrapping
+      }}
+      onClick={() => requestSort(sortKey)}
+    >
+      <span style={{ 
+        display: 'inline-flex', 
+        alignItems: 'center',
+        gap: '4px'
+      }}>
+        {label}
+        {getSortIcon(sortKey)}
+      </span>
+    </th>
+  );
+
   if (!people || people.length === 0) {
     return <div>No people loaded.</div>;
   }
@@ -22,7 +86,6 @@ export default function PeopleTable({
 
   const tableRef = useRef(null);
 
-  // Add effect to scroll to selected row
   useEffect(() => {
     if (selectedId && tableRef.current) {
       const selectedRow = tableRef.current.querySelector(`[data-person-id="${selectedId}"]`);
@@ -41,7 +104,7 @@ export default function PeopleTable({
         backgroundColor: 'white',
         border: '1px solid #ccc',
         borderRadius: '4px',
-        ...style  // Merge passed styles
+        ...style
       }}
     >
       <div style={{ 
@@ -49,25 +112,35 @@ export default function PeopleTable({
         overflowY: 'auto',
         border: '1px solid #ccc',
         borderRadius: '4px',
-        backgroundColor: 'white'  // Ensure table has solid background
+        backgroundColor: 'white'
       }}>
         <table style={{ 
           width: '100%', 
           borderCollapse: 'collapse',
-          tableLayout: 'fixed'  // Add this for better column sizing
+          tableLayout: 'fixed'
         }}>
-          <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+          <thead style={{ 
+            position: 'sticky', 
+            top: 0, 
+            background: 'white', 
+            zIndex: 1,
+            width: '100%'  // Ensure thead uses full width
+          }}>
             <tr>
-              <th style={{ border: "1px solid #ccc", padding: "5px" }}>ID</th>
-              <th style={{ border: "1px solid #ccc", padding: "5px" }}>First Name</th>
-              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Last Name</th>
-              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Birth Date</th>
-              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Death Date</th>
-              <th style={{ border: "1px solid #ccc", padding: "5px" }}>Actions</th>
+              <HeaderCell label="ID" sortKey="id" style={{ width: '10%' }} />
+              <HeaderCell label="First Name" sortKey="firstName" style={{ width: '20%' }} />
+              <HeaderCell label="Last Name" sortKey="lastName" style={{ width: '20%' }} />
+              <HeaderCell label="Birth Date" sortKey="birthDate" style={{ width: '15%' }} />
+              <HeaderCell label="Death Date" sortKey="deathDate" style={{ width: '15%' }} />
+              <th style={{ 
+                border: "1px solid #ccc", 
+                padding: "5px",
+                width: '20%'
+              }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {people.map((person) => (
+            {sortedPeople.map((person) => (
               <tr 
                 key={person.id}
                 data-person-id={person.id}
@@ -78,7 +151,7 @@ export default function PeopleTable({
                 }}
                 onClick={(e) => {
                   onSetCenter(person.id);
-                  onEditPerson(person.id);  // Add this line to show edit form when row is clicked
+                  onEditPerson(person.id);
                 }}
               >
                 <td style={{ 

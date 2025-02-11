@@ -1,0 +1,11 @@
+.table-header:hover {
+  background-color: #f5f5f5;
+}
+
+.table-header svg {
+  transition: opacity 0.2s ease;
+}
+
+.table-header:hover svg {
+  opacity: 1 !important;
+}
