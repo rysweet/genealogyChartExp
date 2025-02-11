@@ -88,12 +88,12 @@ function App() {
 
   return (
     <div style={{ 
-      fontFamily: "Arial, sans-serif",
+      minHeight: '100vh',
       padding: '20px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '20px',
-      minWidth: '360px'
+      minWidth: '360px',
+      alignItems: 'center'  // Center everything horizontally
     }}>
       <h1>Genealogy Chart</h1>
       <Controls
@@ -105,11 +105,11 @@ function App() {
         onResetZoom={() => resetZoom()}
       />
       <div style={{
-        width: '100%',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'grid',
-        gridTemplateRows: 'auto auto',
+        width: '800px',  // Same as chart's default width
+        minWidth: '360px',
+        maxWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         gap: '20px'
       }}>
         <GenealogyChart
@@ -122,14 +122,20 @@ function App() {
           colorOverrides={colorOverrides}
           onColorChange={handleColorChange}
           onSelectPerson={setSelectedPersonId}
-          style={{ height: '600px', width: '100%' }}
+          style={{
+            height: '600px',
+            width: '100%'
+          }}
         />
         <PeopleTable
           people={people}
           onSetCenter={(personId) => setCenterId(personId)}
           onUpdatePeople={setPeople}
           selectedId={selectedPersonId}
-          style={{ height: '300px', width: '100%' }}
+          style={{
+            height: '300px',
+            width: '100%'
+          }}
         />
       </div>
     </div>
