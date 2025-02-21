@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import * as d3 from "d3";
 import PersonEditForm from "./PersonEditForm";
 import PersonTooltip from "./PersonTooltip";
@@ -83,6 +83,18 @@ export default function GenealogyChart({
   // Move buildAncestorArray to component scope so it's accessible everywhere
   const [ancestorArray, setAncestorArray] = useState([]);
 
+  // Create zoom behavior and store it immediately
+  const [zoom] = useState(() => {
+    return d3.zoom()
+      .scaleExtent([0.5, 5])
+      .on("zoom", (event) => {
+        if (gRef.current) {
+          d3.select(gRef.current)
+            .attr("transform", event.transform);
+        }
+      });
+  });
+
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -99,20 +111,12 @@ export default function GenealogyChart({
     // Store the zoomGroup reference for later use
     gRef.current = zoomGroup.node();
 
-    // Setup zoom behavior
-    const zoom = d3.zoom()
-      .scaleExtent([0.5, 5])
-      .on("zoom", (event) => {
-        d3.select(gRef.current)
-          .attr("transform", event.transform);
-      });
-
     // Store zoom function for reset
     zoomRef.current = zoom;
 
     // Apply zoom to svg element
-    svg.call(zoom)
-      .call(zoom.transform, d3.zoomIdentity);
+    svg.call(zoom); // Apply zoom behavior here
+    svg.call(zoom.transform, d3.zoomIdentity);
 
     // Prevent default wheel behavior
     const svgElement = svgRef.current;
@@ -129,19 +133,27 @@ export default function GenealogyChart({
         svgElement.removeEventListener('wheel', handleWheel);
       }
     };
-  }, [width, height]);
+  }, [width, height, zoom, onResetZoom]);
 
-  // Export reset zoom function
+  // Setup zoom reset handler
+  const handleZoomReset = useCallback(() => {
+    console.log("GenealogyChart handleZoomReset called");
+    if (!svgRef.current || !zoomRef.current) {
+      console.log("Missing refs:", { svg: !svgRef.current, zoom: !zoomRef.current });
+      return;
+    }
+    
+    const svg = d3.select(svgRef.current);
+    svg.transition()
+      .duration(750)
+      .call(zoomRef.current.transform, d3.zoomIdentity);
+  }, []);
+
+  // Store zoom reset handler
   useEffect(() => {
-    onResetZoom(() => {
-      if (svgRef.current && zoomRef.current) {
-        d3.select(svgRef.current)
-          .transition()
-          .duration(750)
-          .call(zoomRef.current.transform, d3.zoomIdentity);
-      }
-    });
-  }, [onResetZoom]);
+    console.log("Setting up zoom reset handler");
+    onResetZoom(handleZoomReset);
+  }, [onResetZoom, handleZoomReset]);
 
   useEffect(() => {
     drawChart();
@@ -248,7 +260,7 @@ function getInnerRadius(generation) {
       );
 
       for (const descendant of currentDescendants) {
-        searchDescendants(descendant.id, depth + 1, visited);
+        searchDescendants(descendant.id);
       }
     }
 

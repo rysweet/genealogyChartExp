@@ -20,7 +20,8 @@ import {
 
 function App() {
   const dispatch = useDispatch();
-  const [resetZoom, setResetZoom] = useState(() => () => {});
+  const [resetZoomFn, setResetZoomFn] = useState(null);
+
   const [persistence] = useState(() => new JsonFilePersistence());
   
   const {
@@ -165,7 +166,6 @@ function App() {
         onRemoveGeneration={removeGeneration}
         onSaveData={handleSaveData}
         onLoadData={handleLoadData}
-        onResetZoom={() => resetZoom()}
         people={people}
         onSelectPerson={(id) => {
           dispatch(setSelectedPerson(id));
@@ -189,7 +189,7 @@ function App() {
           centerPersonId={centerId}
           onUpdatePeople={handleUpdatePeople}  // Use the new handler
           onSetCenter={(id) => dispatch(setCenterId(id))}
-          onResetZoom={setResetZoom}
+          onResetZoom={setResetZoomFn} // Revert to passing setResetZoomFn directly
           colorOverrides={colorOverrides}
           onColorChange={handleColorChange}
           onSelectPerson={handlePersonSelect}  // Use unified handler

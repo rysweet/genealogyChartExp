@@ -18,7 +18,6 @@ export default function Controls({
   onAddGeneration, 
   onSaveData, 
   onLoadData,
-  onResetZoom,
   people,
   onSelectPerson,
   onRemoveGeneration
@@ -46,6 +45,11 @@ export default function Controls({
     if (file) {
       onImportGedcom(file);
     }
+  };
+
+  const handleResetZoom = () => {
+    console.log("Reset zoom button clicked => reloading page");
+    window.location.reload();
   };
 
   return (
@@ -118,7 +122,7 @@ export default function Controls({
       </button>
 
       <button
-        onClick={onResetZoom}
+        onClick={handleResetZoom}
         title="Reset Zoom"
         style={{ padding: '8px' }}
       >
