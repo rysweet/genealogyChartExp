@@ -1,36 +1,24 @@
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
 }
 
-input, select, button {
+input, select, button, label, p, span, div {
   font-family: 'Inter', sans-serif;
 }
 
-/* Make table headers more elegant */
+/* Table styles */
+th, td {
+  font-family: 'Inter', sans-serif;
+}
+
 th {
-  font-family: 'Playfair Display', serif;
   font-weight: 600;
-  font-size: 1.1em;
-}
-
-/* Style table content */
-td {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95em;
-}
-
-/* Style form labels */
-label {
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
 }

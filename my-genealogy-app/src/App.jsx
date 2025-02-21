@@ -154,7 +154,7 @@ function App() {
       alignItems: 'center'  // Center everything horizontally
     }}>
       <h1 style={{
-        fontFamily: 'Playfair Display, serif',
+        fontFamily: 'Inter, sans-serif',  // Changed from Playfair Display to Inter
         marginBottom: '20px'
       }}>
         {getCenteredPersonName()}

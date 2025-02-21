@@ -1,8 +1,8 @@
 [
   {
     "id": "g0_1",
-    "firstName": "You",
-    "lastName": "Smith",
+    "firstName": "Caspar",
+    "lastName": "Haglund",
     "birthDate": "1990",
     "deathDate": "",
     "parents": ["g1_1", "g1_2"]
