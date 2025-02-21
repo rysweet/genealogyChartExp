@@ -3,6 +3,7 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import storage from 'redux-persist/lib/storage';
 import { combineReducers } from 'redux';
 import genealogySlice from './genealogySlice';
+import settingsReducer from './settingsSlice';
 
 const persistConfig = {
   key: 'root',
@@ -11,7 +12,8 @@ const persistConfig = {
 };
 
 const rootReducer = combineReducers({
-  genealogy: genealogySlice
+  genealogy: genealogySlice,
+  settings: settingsReducer
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

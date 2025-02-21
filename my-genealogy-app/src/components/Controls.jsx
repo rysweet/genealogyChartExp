@@ -8,9 +8,11 @@ import {
   FaPlus,
   FaCompress,
   FaSearch,
-  FaMinus
+  FaMinus,
+  FaCog
 } from 'react-icons/fa';
 import SearchDropdown from './SearchDropdown';
+import Settings from './Settings';  // Add this import
 
 export default function Controls({ 
   onImportGedcom, 
@@ -26,6 +28,7 @@ export default function Controls({
   const fileInputRef = React.useRef();
   const [showSearch, setShowSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
   
   const searchResults = searchTerm ? people.filter(person => 
     person.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -172,6 +175,20 @@ export default function Controls({
           </div>
         )}
       </div>
+
+      <div style={{ width: '1px', backgroundColor: '#ddd', margin: '0 5px' }} />
+
+      <button
+        onClick={() => setShowSettings(true)}
+        title="Settings"
+        style={{ padding: '8px' }}
+      >
+        <FaCog size={20} />
+      </button>
+
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
+      )}
     </div>
   );
 }

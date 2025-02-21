@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import * as d3 from "d3";
 import PersonEditForm from "./PersonEditForm";
 import PersonTooltip from "./PersonTooltip";
+import { useSelector } from 'react-redux';  // Add this import
 
 // Geometry
 const RING_WIDTH = 60;
@@ -68,6 +69,9 @@ export default function GenealogyChart({
   const zoomRef = useRef(null);  // Create zoom function reference
   const width = 800;  // Move width/height to component level
   const height = 800;
+
+  // Add this near the top with other hooks
+  const settings = useSelector(state => state.settings);
 
   // Move colorScale creation to component level
   const [colorScale] = useState(() => createColorScale(maxGenerations));
@@ -157,7 +161,7 @@ export default function GenealogyChart({
 
   useEffect(() => {
     drawChart();
-  }, [people, maxGenerations, centerPersonId, colorOverrides, selectedPersonId]); // Added selectedPersonId
+  }, [people, maxGenerations, centerPersonId, colorOverrides, selectedPersonId, settings]); // Added selectedPersonId
 
   function approximateTextWidth(str, fontSize = DEFAULT_FONT_SIZE) {
     const avgCharWidth = fontSize * 0.6;
@@ -501,7 +505,9 @@ function getInnerRadius(generation) {
 
         let label = "Unknown";
         if (person) {
-          label = person.firstName + " " + person.lastName + " (" + person.birthDate + " - " + person.deathDate + ")";
+          label = settings.showYearsLived 
+            ? `${person.firstName} ${person.lastName} (${person.birthDate} - ${person.deathDate})`
+            : `${person.firstName} ${person.lastName}`;
         }
         const midRadius = (innerRadius + outerRadius) / 2;
         const angleDiff = Math.abs(endAngle - startAngle);
