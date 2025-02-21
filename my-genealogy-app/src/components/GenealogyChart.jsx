@@ -478,6 +478,8 @@ function getInnerRadius(generation) {
       .style("font-size", DEFAULT_FONT_SIZE + "px")
       .style("fill", getTextColorForBackground(centerBgColor))
       .text(centerPerson ? centerPerson.firstName + " " + centerPerson.lastName : "Unknown");
+
+    // First pass: Draw all segments
     for (let i = 1; i < effectiveGenerations; i++) {
       const genArray = ancestors[i];
       const segmentCount = 2 ** i;
@@ -530,7 +532,10 @@ function getInnerRadius(generation) {
         const isLeftSide = midAngle > Math.PI/2 && midAngle < (3 * Math.PI/2);
         
         if (shouldRotateText(i, settings)) {
-          // For outer rings, use radial text
+          // First, draw the segment path
+          createSegmentPath(segmentGroup, arcGenerator, personId, segmentColor);
+          
+          // Then draw the text on top with correct color computation
           const textAngle = getTextRotation(midAngle, isLeftSide);
           const radialMidpoint = (innerRadius + outerRadius) / 2;
           const textX = Math.cos(midAngle) * radialMidpoint;
@@ -541,7 +546,7 @@ function getInnerRadius(generation) {
             .attr("text-anchor", "middle")
             .attr("alignment-baseline", "middle")
             .style("font-size", DEFAULT_FONT_SIZE + "px")
-            .style("fill", getTextColorForBackground(segmentColor))  // Use same text color calculation
+            .style("fill", getTextColorForBackground(segmentColor))  // Use the same color computation
             .style("pointer-events", "none")
             .text(label);
         } else {
@@ -568,6 +573,93 @@ function getInnerRadius(generation) {
               .attr("d", lineArcGen());
             const lineArcLength = angleDiff * lineRadius;
             segmentGroup.append("text")
+              .style("font-size", DEFAULT_FONT_SIZE + "px")
+              .style("fill", textColor)
+              .style("pointer-events", "none") // Make text non-blocking
+              .append("textPath")
+              .attr("xlink:href", "#" + textPathId)
+              .attr("startOffset", (lineArcLength / 2) + "px")
+              .style("text-anchor", "middle")
+              .text(lineText);
+          });
+        }
+      }
+    }
+
+    // Second pass: Draw all text
+    const textGroup = chartGroup.append("g").attr("class", "text-layer");
+    for (let i = 1; i < effectiveGenerations; i++) {
+      const genArray = ancestors[i];
+      const segmentCount = 2 ** i;
+      const arcAngle = (2 * Math.PI) / segmentCount - (ARC_PADDING * Math.PI) / 180;
+      const ringWidth = getRingWidth(i);
+      const innerRadius = getInnerRadius(i);
+      const outerRadius = innerRadius + ringWidth;
+      const arcFillColor = colorScale(i);
+      for (let k = 0; k < segmentCount; k++) {
+        const personId = genArray[k];
+        const startAngle = k * ((2 * Math.PI) / segmentCount);
+        const endAngle = startAngle + arcAngle;
+        const arcGenerator = d3.arc()
+          .innerRadius(innerRadius)
+          .outerRadius(outerRadius)
+          .startAngle(startAngle)
+          .endAngle(endAngle);
+
+        if (!personId) continue;
+
+        const person = peopleMap.get(personId);
+        const segmentColor = getColorForPerson(personId, i);
+        const textColor = getTextColorForBackground(segmentColor);
+
+        let label = "Unknown";
+        if (person) {
+          label = settings.showYearsLived 
+            ? `${person.firstName} ${person.lastName} (${person.birthDate} - ${person.deathDate})`
+            : `${person.firstName} ${person.lastName}`;
+        }
+        const midAngle = startAngle + (arcAngle / 2);
+        const isLeftSide = midAngle > Math.PI/2 && midAngle < (3 * Math.PI/2);
+        
+        if (shouldRotateText(i, settings)) {
+          // Render radial text
+          const textAngle = getTextRotation(midAngle, isLeftSide);
+          const radialMidpoint = (innerRadius + outerRadius) / 2;
+          const textX = Math.cos(midAngle) * radialMidpoint;
+          const textY = Math.sin(midAngle) * radialMidpoint;
+          
+          textGroup.append("text")
+            .attr("transform", `translate(${textX},${textY}) rotate(${textAngle})`)
+            .attr("text-anchor", "middle")
+            .attr("alignment-baseline", "middle")
+            .style("font-size", DEFAULT_FONT_SIZE + "px")
+            .style("fill", textColor)
+            .style("pointer-events", "none")
+            .text(label);
+        } else {
+          // Render curved text
+          const midRadius = (innerRadius + outerRadius) / 2;
+          const angleDiff = Math.abs(endAngle - startAngle);
+          const arcLength = angleDiff * midRadius;
+          const lines = wrapTextToWidth(label, arcLength, DEFAULT_FONT_SIZE);
+          const numLines = lines.length;
+          const totalHeight = (numLines - 1) * LINE_SPACING;
+          // Now, line 0 will be the outermost line and subsequent lines are placed inward
+          const outermostRadius = midRadius + totalHeight / 2;
+          lines.forEach((lineText, idx) => {
+            const lineRadius = outermostRadius - idx * LINE_SPACING;
+            const lineArcGen = d3.arc()
+              .innerRadius(lineRadius)
+              .outerRadius(lineRadius)
+              .startAngle(startAngle)
+              .endAngle(endAngle);
+            const textPathId = `textPath-${i}-${k}-line${idx}`;
+            textGroup.append("defs")
+              .append("path")
+              .attr("id", textPathId)
+              .attr("d", lineArcGen());
+            const lineArcLength = angleDiff * lineRadius;
+            textGroup.append("text")
               .style("font-size", DEFAULT_FONT_SIZE + "px")
               .style("fill", textColor)
               .style("pointer-events", "none") // Make text non-blocking
