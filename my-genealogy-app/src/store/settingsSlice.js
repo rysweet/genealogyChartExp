@@ -10,6 +10,7 @@ const defaultSettings = {
   animationSpeed: 750,
   showTooltips: true,
   showYearsLived: true,
+  rotateTextInNarrowArcs: true  // Add new setting with default true
 };
 
 // Try to load settings from localStorage

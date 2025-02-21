@@ -36,35 +36,49 @@ export default function Settings({ onClose }) {
         </button>
       </div>
 
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', // Changed from gap to space-between
-        alignItems: 'center', 
-        marginBottom: '20px',
-        minWidth: '200px' // Added minimum width to give some space
-      }}>
-        <label htmlFor="showYearsLived">Show years lived</label>
-        <input
-          type="checkbox"
-          id="showYearsLived"
-          checked={settings.showYearsLived}
-          onChange={(e) => handleChange('showYearsLived', e.target.checked)}
-        />
-      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center'
+        }}>
+          <label htmlFor="showYearsLived">Show years lived</label>
+          <input
+            type="checkbox"
+            id="showYearsLived"
+            checked={settings.showYearsLived}
+            onChange={(e) => handleChange('showYearsLived', e.target.checked)}
+          />
+        </div>
 
-      <button 
-        onClick={handleReset}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: '#ff4444',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Reset to Defaults
-      </button>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center'
+        }}>
+          <label htmlFor="rotateTextInNarrowArcs">Rotate text in narrow arcs</label>
+          <input
+            type="checkbox"
+            id="rotateTextInNarrowArcs"
+            checked={settings.rotateTextInNarrowArcs}
+            onChange={(e) => handleChange('rotateTextInNarrowArcs', e.target.checked)}
+          />
+        </div>
+
+        <button 
+          onClick={handleReset}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#ff4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Reset to Defaults
+        </button>
+      </div>
     </div>
   );
 }
