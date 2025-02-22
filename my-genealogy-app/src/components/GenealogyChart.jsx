@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import PersonEditForm from "./PersonEditForm";
 import PersonTooltip from "./PersonTooltip";
 import { useSelector } from 'react-redux';  // Add this import
+import { ChartSegment } from '../models/ChartSegment';
 
 // Geometry
 const RING_WIDTH = 60;
@@ -361,6 +362,104 @@ function getInnerRadius(generation) {
     onSelectPerson(newPerson.id);
   };
 
+  function createSegment(chartGroup, {
+    personId,
+    generation,
+    position,
+    peopleMap,
+    colorOverrides,
+    colorScale,
+    selectedPersonId,
+    ringDimensions,
+    segmentCount,
+    handleSegmentClick,
+    handleSegmentHover,
+    handleSegmentLeave,
+    settings
+  }) {
+    const startAngle = position * ((2 * Math.PI) / segmentCount);
+    const arcAngle = (2 * Math.PI) / segmentCount - (ARC_PADDING * Math.PI) / 180;
+    const endAngle = startAngle + arcAngle;
+  
+    const segment = new ChartSegment({
+      person: peopleMap.get(personId),
+      generation,
+      position,
+      startAngle,
+      endAngle,
+      innerRadius: ringDimensions.innerRadius,
+      outerRadius: ringDimensions.outerRadius,
+      color: personId ? getColorForPerson(personId, generation, colorOverrides, colorScale) : '#eee',
+      isSelected: personId === selectedPersonId
+    });
+  
+    // Create segment group for better organization
+    const segmentGroup = chartGroup.append("g");
+  
+    // Create the main arc path
+    const path = segmentGroup.append("path")
+      .attr("d", segment.createArcGenerator()())
+      .attr("fill", segment.color)
+      .attr("stroke", segment.borderProperties.color)
+      .attr("stroke-width", segment.borderProperties.width)
+      .attr("cursor", "pointer")
+      .style("pointer-events", "all");
+  
+    // Add event handlers
+    if (personId) {
+      path
+        .on("click", (event) => handleSegmentClick(event, personId))
+        .on("mouseover", (event) => handleSegmentHover(event, segment.person))
+        .on("mouseout", handleSegmentLeave);
+    } else {
+      path.on("click", (event) => handleEmptySegmentClick(event, generation, position));
+    }
+  
+    // Add text if we have a person
+    if (segment.person) {
+      const displayText = settings.showYearsLived 
+        ? `${segment.displayText} (${segment.person.birthDate} - ${segment.person.deathDate})`
+        : segment.displayText;
+      
+      renderSegmentText(segmentGroup, segment, displayText);
+    }
+  
+    return segmentGroup;
+  }
+  
+  function renderSegmentText(segmentGroup, segment, text) {
+    const lines = segment.getTextLines(text, segment.arcLength, DEFAULT_FONT_SIZE);
+    const placement = segment.getTextPlacement(lines.length, LINE_SPACING);
+    
+    lines.forEach((lineText, idx) => {
+      const lineRadius = placement.getLineRadius(idx);
+      const textPathId = `textPath-${segment.generation}-${segment.position}-line${idx}`;
+  
+      // Create arc path for text
+      segmentGroup.append("defs")
+        .append("path")
+        .attr("id", textPathId)
+        .attr("d", segment.createTextArcGenerator(lineRadius)())
+        .attr("class", "text-path");
+  
+      // Add text with adjusted positioning
+      const textElement = segmentGroup.append("text")
+        .style("font-size", `${DEFAULT_FONT_SIZE}px`)
+        .style("fill", segment.textColor)
+        .style("pointer-events", "none")
+        .style("dominant-baseline", "middle");
+  
+      // Add text along the path with explicit centering
+      textElement.append("textPath")
+        .attr("xlink:href", `#${textPathId}`)
+        .attr("startOffset", "50%")
+        .style("text-anchor", "middle")
+        .attr("method", "stretch") // Helps with text distribution
+        .attr("spacing", "auto") // Improves text spacing
+        .text(lineText);
+    });
+  }
+
   function drawChart() {
     if (!gRef.current) return;
     const ancestors = buildAncestorArray();
@@ -386,6 +485,7 @@ function getInnerRadius(generation) {
       .attr("fill", "rgba(255, 255, 255, 0.8)")
       .attr("stroke", "#ccc");
 
+    // Zoom in button
     // Zoom in button
     controlsGroup.append("rect")
       .attr("x", 5)
@@ -464,81 +564,25 @@ function getInnerRadius(generation) {
     for (let i = 1; i < effectiveGenerations; i++) {
       const genArray = ancestors[i];
       const segmentCount = 2 ** i;
-      const arcAngle = (2 * Math.PI) / segmentCount - (ARC_PADDING * Math.PI) / 180;
       const ringWidth = getRingWidth(i);
       const innerRadius = getInnerRadius(i);
       const outerRadius = innerRadius + ringWidth;
       const arcFillColor = colorScale(i);
       for (let k = 0; k < segmentCount; k++) {
-        const personId = genArray[k];
-        const startAngle = k * ((2 * Math.PI) / segmentCount);
-        const endAngle = startAngle + arcAngle;
-        const arcGenerator = d3.arc()
-          .innerRadius(innerRadius)
-          .outerRadius(outerRadius)
-          .startAngle(startAngle)
-          .endAngle(endAngle);
-
-        // Create segment group for better event handling
-        const segmentGroup = chartGroup.append("g");
-
-        if (!personId) {
-          // Simplify empty segment handling - just the clickable path
-          chartGroup.append("g")
-            .append("path")
-            .attr("d", arcGenerator)
-            .attr("fill", "#eee")
-            .attr("stroke", "#ccc")
-            .attr("cursor", "pointer")
-            .style("pointer-events", "all")
-            .on("click", (event) => handleEmptySegmentClick(event, i, k));
-
-          continue;
-        }
-
-        const person = peopleMap.get(personId);
-        const segmentColor = personId ? getColorForPerson(personId, i) : "#eee";
-        const textColor = getTextColorForBackground(segmentColor);
-
-        // Use the new createSegmentPath function
-        createSegmentPath(segmentGroup, arcGenerator, personId, segmentColor);
-
-        let label = "Unknown";
-        if (person) {
-          label = settings.showYearsLived 
-            ? `${person.firstName} ${person.lastName} (${person.birthDate} - ${person.deathDate})`
-            : `${person.firstName} ${person.lastName}`;
-        }
-        const midRadius = (innerRadius + outerRadius) / 2;
-        const angleDiff = Math.abs(endAngle - startAngle);
-        const arcLength = angleDiff * midRadius;
-        const lines = wrapTextToWidth(label, arcLength, DEFAULT_FONT_SIZE);
-        const numLines = lines.length;
-        const totalHeight = (numLines - 1) * LINE_SPACING;
-        // Now, line 0 will be the outermost line and subsequent lines are placed inward
-        const outermostRadius = midRadius + totalHeight / 2;
-        lines.forEach((lineText, idx) => {
-          const lineRadius = outermostRadius - idx * LINE_SPACING;
-          const lineArcGen = d3.arc()
-            .innerRadius(lineRadius)
-            .outerRadius(lineRadius)
-            .startAngle(startAngle)
-            .endAngle(endAngle);
-          const textPathId = `textPath-${i}-${k}-line${idx}`;
-          segmentGroup.append("defs")
-            .append("path")
-            .attr("id", textPathId)
-            .attr("d", lineArcGen());
-          const lineArcLength = angleDiff * lineRadius;
-          segmentGroup.append("text")
-            .style("font-size", DEFAULT_FONT_SIZE + "px")
-            .style("fill", textColor)
-            .style("pointer-events", "none") // Make text non-blocking
-            .append("textPath")
-            .attr("xlink:href", "#" + textPathId)
-            .attr("startOffset", (lineArcLength / 2) + "px")
-            .style("text-anchor", "middle")
-            .text(lineText);
+        createSegment(chartGroup, {
+          personId: genArray[k],
+          generation: i,
+          position: k,
+          peopleMap,
+          colorOverrides,
+          colorScale,
+          selectedPersonId,
+          ringDimensions: { innerRadius, outerRadius },
+          segmentCount,
+          handleSegmentClick,
+          handleSegmentHover,
+          handleSegmentLeave,
+          settings
         });
       }
     }
