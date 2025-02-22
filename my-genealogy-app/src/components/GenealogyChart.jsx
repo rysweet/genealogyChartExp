@@ -292,6 +292,7 @@ function getInnerRadius(generation) {
       .attr("stroke", personId === selectedPersonId ? HIGHLIGHT_STROKE_COLOR : DEFAULT_STROKE_COLOR)
       .attr("stroke-width", personId === selectedPersonId ? HIGHLIGHT_STROKE_WIDTH : DEFAULT_STROKE_WIDTH)
       .attr("cursor", "pointer")
+      .attr("data-segment-id", `segment-${personId}`) // Add data attribute
       .style("pointer-events", "all")
       .on("click", (event) => handleSegmentClick(event, personId))
       .on("mouseover", (event) => handleSegmentHover(event, person))
@@ -525,18 +526,28 @@ function getInnerRadius(generation) {
             .startAngle(startAngle)
             .endAngle(endAngle);
           const textPathId = `textPath-${i}-${k}-line${idx}`;
+          
+          // Calculate the arc length for this specific line
+          const textArcLength = Math.abs(endAngle - startAngle) * lineRadius;
+          
+          // Add data attribute to the path in defs
           segmentGroup.append("defs")
             .append("path")
             .attr("id", textPathId)
-            .attr("d", lineArcGen());
-          const lineArcLength = angleDiff * lineRadius;
-          segmentGroup.append("text")
+            .attr("d", lineArcGen())
+            .attr("data-associated-segment", `segment-${personId}`);
+
+          // Add data attributes to the text element
+          const textElement = segmentGroup.append("text")
             .style("font-size", DEFAULT_FONT_SIZE + "px")
             .style("fill", textColor)
-            .style("pointer-events", "none") // Make text non-blocking
-            .append("textPath")
+            .style("pointer-events", "none")
+            .attr("data-text-for-segment", `segment-${personId}`)
+            .attr("data-text-line", idx);
+
+          textElement.append("textPath")
             .attr("xlink:href", "#" + textPathId)
-            .attr("startOffset", (lineArcLength / 2) + "px")
+            .attr("startOffset", (textArcLength / 2) + "px")  // Use textArcLength instead of lineArcLength
             .style("text-anchor", "middle")
             .text(lineText);
         });
