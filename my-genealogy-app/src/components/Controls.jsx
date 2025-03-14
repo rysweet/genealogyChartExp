@@ -9,7 +9,9 @@ import {
   FaCompress,
   FaSearch,
   FaMinus,
-  FaCog
+  FaCog,
+  FaUser,
+  FaUsers
 } from 'react-icons/fa';
 import SearchDropdown from './SearchDropdown';
 import Settings from './Settings';
@@ -111,17 +113,29 @@ export default function Controls({
       <button
         onClick={onAddGeneration}
         title="Add Generation"
-        style={{ padding: '8px' }}
+        style={{ 
+          padding: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}
       >
-        <FaPlus size={20} />
+        <FaPlus size={16} />
+        <FaUsers size={18} />
       </button>
 
       <button
         onClick={onRemoveGeneration}
         title="Remove Generation"
-        style={{ padding: '8px' }}
+        style={{ 
+          padding: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}
       >
-        <FaMinus size={20} />
+        <FaMinus size={16} />
+        <FaUser size={18} />
       </button>
       
       <div style={{ width: '1px', backgroundColor: '#ddd', margin: '0 5px' }} />
