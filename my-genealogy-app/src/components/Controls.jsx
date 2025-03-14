@@ -12,7 +12,7 @@ import {
   FaCog
 } from 'react-icons/fa';
 import SearchDropdown from './SearchDropdown';
-import Settings from './Settings';  // Add this import
+import Settings from './Settings';
 
 export default function Controls({ 
   onImportGedcom, 
@@ -123,6 +123,8 @@ export default function Controls({
       >
         <FaMinus size={20} />
       </button>
+      
+      <div style={{ width: '1px', backgroundColor: '#ddd', margin: '0 5px' }} />
 
       <button
         onClick={handleResetZoom}
